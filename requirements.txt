@@ -7,4 +7,5 @@ altair
 streamlit-pdf-viewer
 PyGithub
 matplotlib
-streamlit-shadcn-ui
+streamlit-extras>=0.3.0
+
