@@ -1,4 +1,3 @@
-
 import streamlit as st
 import pandas as pd
 import plotly.express as px
@@ -13,82 +12,65 @@ st.set_page_config(
     layout="wide"
 )
 
-# لتحسين التوافق مع شاشات الجوال
+# لتحسين التوافق مع شاشات الجوال وإضافة خطوط احترافية
 st.markdown(
     '<meta name="viewport" content="width=device-width, initial-scale=1">',
     unsafe_allow_html=True
 )
+st.markdown(
+    """
+    <!-- استيراد خط Tajawal من Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* تعميم الخط على كامل الصفحة */
+        html, body, [class*="css"], .stMarkdown, .stApp {
+            font-family: 'Tajawal', sans-serif;
+        }
 
-# CSS مخصص ودعم الاستجابة
-st.markdown("""
-<style>
-    /* تعديلات عامة لدعم RTL */
-    .stApp {
-        direction: rtl;
-        text-align: right;
-    }
-    /* تنسيق العنوان الرئيسي */
-    h1 {
-        color: #1e88e5;
-        padding-bottom: 15px;
-        border-bottom: 2px solid #1e88e5;
-        margin-bottom: 30px;
-    }
-    /* تنسيق العناوين الفرعية */
-    h2, h3 {
-        color: #1e88e5;
-        margin-top: 30px;
-        margin-bottom: 20px;
-    }
-    /* تنسيق البطاقات */
-    .metric-card {
-        background-color: white;
-        border-radius: 10px;
-        padding: 20px;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-        text-align: center;
-    }
-    /* تنسيق الرسم البياني */
-    .chart-container {
-        background-color: white;
-        border-radius: 10px;
-        padding: 15px;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-        margin-bottom: 20px;
-    }
-    /* تنسيق البطاقات للأعضاء المميزين */
-    .faculty-card {
-        background: linear-gradient(135deg, #f5f7fa 0%, #e3e6f0 100%);
-        border-radius: 10px;
-        padding: 15px;
-        margin-bottom: 10px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    }
-    /* تنسيق الإنجازات */
-    .achievement-item {
-        padding: 10px;
-        border-right: 3px solid #1e88e5;
-        margin-bottom: 10px;
-        background-color: rgba(30, 136, 229, 0.05);
-    }
-    /* استجابة الجوال */
-    @media only screen and (max-width: 600px) {
-        .stDataFrame, .stPlotlyChart, .streamlit-pdf-viewer {
-            width: 100% !important;
+        /* تعديلات عامة لدعم RTL */
+        .stApp {
+            direction: rtl;
+            text-align: right;
         }
-        [data-testid="stBlock"] > .row-widget.stColumns {
-            flex-direction: column !important;
+        /* تنسيق العنوان الرئيسي */
+        h1 {
+            color: #1e88e5;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #1e88e5;
+            margin-bottom: 30px;
+            font-weight: 700;
         }
-        [data-testid="stSidebar"] {
-            display: none;
+        /* تنسيق العناوين الفرعية */
+        h2, h3 {
+            color: #1e88e5;
+            margin-top: 30px;
+            margin-bottom: 20px;
+            font-weight: 700;
         }
-        .block-container {
-            padding-left: 0.5rem !important;
-            padding-right: 0.5rem !important;
+        /* تنسيق البطاقات */
+        .metric-card, .chart-container, .faculty-card, .achievement-item {
+            font-weight: 400;
         }
-    }
-</style>
-""", unsafe_allow_html=True)
+        /* استجابة الجوال */
+        @media only screen and (max-width: 600px) {
+            .stDataFrame, .stPlotlyChart, .streamlit-pdf-viewer {
+                width: 100% !important;
+            }
+            [data-testid="stBlock"] > .row-widget.stColumns {
+                flex-direction: column !important;
+            }
+            [data-testid="stSidebar"] {
+                display: none;
+            }
+            .block-container {
+                padding-left: 0.5rem !important;
+                padding-right: 0.5rem !important;
+            }
+        }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 
 # ---- الترويسة ----
 col1, col2 = st.columns([3, 1])
@@ -108,6 +90,7 @@ def load_department_summary():
     try:
         return get_github_file_content("data/department_summary.csv")
     except:
+        # بيانات تجريبية احتياطية
         data = {
             "البرنامج": [
                 "بكالوريوس في القرآن وعلومه",
@@ -137,18 +120,19 @@ def load_yearly_data():
     import hashlib
     for year in years:
         for program in programs:
-            program_hash = int(hashlib.md5(program.encode()).hexdigest(), 16) % 100
+            ph = int(hashlib.md5(program.encode()).hexdigest(), 16) % 100
             data.append({
                 "العام": year,
                 "البرنامج": program,
-                "عدد الطلاب": 100 + (year - 2020) * 10 + program_hash % 100,
-                "نسبة النجاح": min(95, 70 + (year - 2020) * 2 + program_hash % 10),
-                "معدل الرضا": min(90, 75 + (year - 2020) * 1.5 + (program_hash // 2) % 10)
+                "عدد الطلاب": 100 + (year - 2020) * 10 + ph,
+                "نسبة النجاح": min(95, 70 + (year - 2020) * 2 + ph % 10),
+                "معدل الرضا": min(90, 75 + (year - 2020) * 1.5 + (ph // 2) % 10)
             })
     return pd.DataFrame(data)
 
 @st.cache_data(ttl=3600)
 def load_faculty_achievements():
+    # بيانات تجريبية للإنجازات
     achievements = [
         {"العضو": "د. محمد أحمد", "الإنجاز": "نشر بحث في مجلة عالمية", "التاريخ": "2025-04-15", "النقاط": 50, "البرنامج": "بكالوريوس في القرآن وعلومه"},
         {"العضو": "د. عائشة سعد", "الإنجاز": "إطلاق مبادرة تعليمية", "التاريخ": "2025-04-10", "النقاط": 40, "البرنامج": "دكتوراه علوم القرآن"},
@@ -218,7 +202,7 @@ with tabs[0]:
             title="عدد الطلاب في كل برنامج",
             color="عدد الطلاب",
             orientation='h',
-            color_continuous_scale="Viridis"
+            color_continuous_sequence="Viridis"
         )
         st.plotly_chart(fig_bar, use_container_width=True)
 
@@ -300,6 +284,6 @@ st.info("""
 **نصائح للاستخدام:**
 - انقر على اسم أي برنامج في القائمة الجانبية لاستعراض تفاصيله
 - استخدم صفحة "هيئة التدريس" لعرض معلومات الأعضاء
-- قم بزيارة "التقييمات والاستطلاعات" للاطلاع على نتائج التقييمات
+- قم بزيارة "التقييمات والاستطلاعات" للاطلاع على نتائجالتقييمات
 - استخدم "لوحة إنجازات الأعضاء" لتسجيل وعرض إنجازات أعضاء هيئة التدريس
 """)
