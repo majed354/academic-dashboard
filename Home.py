@@ -9,6 +9,42 @@ st.set_page_config(
     layout="wide"
 )
 
+# إضافة CSS مخصص لدعم RTL
+st.markdown("""
+<style>
+    /* تعديلات عامة لدعم RTL */
+    .stApp {
+        direction: rtl;
+        text-align: right;
+    }
+    
+    /* ترتيب العناوين من اليمين لليسار */
+    h1, h2, h3, h4, h5, h6 {
+        text-align: right;
+    }
+    
+    /* ترتيب الجداول من اليمين لليسار */
+    .dataframe {
+        text-align: right;
+    }
+    
+    /* محاذاة الأزرار والمدخلات من اليمين */
+    button, input, select, textarea, .stButton>button, .stTextInput>div>div>input {
+        text-align: right;
+    }
+    
+    /* تعديل الهوامش للعناصر */
+    .stMarkdown {
+        text-align: right;
+    }
+    
+    /* تعديل في القائمة الجانبية */
+    .css-1inwz65 {
+        text-align: right;
+    }
+</style>
+""", unsafe_allow_html=True)
+
 st.title("📊 لوحة مؤشرات البرامج الأكاديمية")
 st.markdown("### كلية القرآن الكريم والدراسات الإسلامية")
 
