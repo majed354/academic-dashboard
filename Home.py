@@ -90,7 +90,24 @@ st.sidebar.success("اختر برنامجًا من القائمة أعلاه ل�
 # ---- تحميل البيانات ----
 @st.cache_data(ttl=3600)
 def load_department_summary():
-    return get_github_file_content("data/department_summary.csv")
+    try:
+        return get_github_file_content("data/department_summary.csv")
+    except:
+        # إنشاء بيانات تجريبية في حالة عدم وجود البيانات - تم تعديلها لإضافة الطلاب والطالبات بشكل منفصل
+        data = {
+            "البرنامج": [
+                "بكالوريوس في القرآن وعلومه",
+                "بكالوريوس القراءات",
+                "ماجستير الدراسات القرآنية المعاصرة",
+                "ماجستير القراءات",
+                "دكتوراه علوم القرآن",
+                "دكتوراه القراءات"
+            ],
+            "عدد الطلاب": [125, 110, 90, 120, 70, 85],  # أعداد الطلاب الذكور
+            "عدد الطالبات": [85, 70, 60, 80, 50, 55],   # أعداد الطالبات
+            "أعضاء هيئة التدريس": [15, 12, 8, 10, 5, 6]
+        }
+        return pd.DataFrame(data)
 
 @st.cache_data(ttl=3600)
 def load_yearly_data():
@@ -110,12 +127,22 @@ def load_yearly_data():
         for program in programs:
             # هنا نضيف بيانات عشوائية في حالة عدم وجود بيانات حقيقية
             # في التطبيق الحقيقي، استبدل هذا بجلب البيانات من GitHub
+            import hashlib
+            program_hash = int(hashlib.md5(program.encode()).hexdigest(), 16) % 100
+            
+            # تقسيم مختلف للطلاب والطالبات
+            male_students = 60 + (year - 2020) * 5 + program_hash % 50
+            female_students = 40 + (year - 2020) * 5 + (program_hash // 2) % 40
+            total_students = male_students + female_students
+            
             data.append({
                 "العام": year,
                 "البرنامج": program,
-                "عدد الطلاب": 100 + (year - 2020) * 10 + hash(program) % 100,
-                "نسبة النجاح": min(95, 70 + (year - 2020) * 2 + hash(program[:5]) % 10),
-                "معدل الرضا": min(90, 75 + (year - 2020) * 1.5 + hash(program[:3]) % 10)
+                "عدد الطلاب": male_students,
+                "عدد الطالبات": female_students,
+                "المجموع": total_students,
+                "نسبة النجاح": min(95, 70 + (year - 2020) * 2 + program_hash % 10),
+                "معدل الرضا": min(90, 75 + (year - 2020) * 1.5 + (program_hash // 2) % 10)
             })
             
     return pd.DataFrame(data)
@@ -148,6 +175,7 @@ def load_top_faculty():
 try:
     dept_data = load_department_summary()
     total_students = dept_data["عدد الطلاب"].sum()
+    total_female_students = dept_data["عدد الطالبات"].sum()
     total_faculty = dept_data["أعضاء هيئة التدريس"].sum()
     yearly_data = load_yearly_data()
     latest_year_data = yearly_data[yearly_data["العام"] == 2024]
@@ -157,7 +185,8 @@ except Exception as e:
     st.error(f"خطأ في تحميل البيانات: {e}")
     st.warning("سيتم استخدام بيانات تجريبية لأغراض العرض.")
     # إنشاء بيانات تجريبية في حالة الفشل
-    total_students = 1000
+    total_students = 600
+    total_female_students = 400
     total_faculty = 50
 
 # ---- بطاقات المقاييس الرئيسية ----
@@ -165,10 +194,10 @@ st.subheader("المؤشرات الرئيسية")
 
 c1, c2, c3, c4 = st.columns(4)
 with c1:
-    st.metric("إجمالي عدد الطلاب", f"{total_students:,}", "+5% منذ العام الماضي")
+    st.metric("عدد الطلاب", f"{total_students:,}", "+3% منذ العام الماضي")
     
 with c2:
-    st.metric("إجمالي أعضاء هيئة التدريس", f"{total_faculty:,}", "+2 عضو جديد")
+    st.metric("عدد الطالبات", f"{total_female_students:,}", "+7% منذ العام الماضي")
     
 with c3:
     st.metric("معدل النجاح الإجمالي", "87%", "+3% منذ العام الماضي")
@@ -180,20 +209,25 @@ with c4:
 st.subheader("تحليل البرامج الأكاديمية")
 
 # تبويبات للتبديل بين التحليلات المختلفة
-tabs = st.tabs(["توزيع الطلاب", "مقارنة المؤشرات", "التطور السنوي"])
+tabs = st.tabs(["توزيع الطلاب والطالبات", "مقارنة البرامج", "التطور السنوي"])
 
-# تبويب 1: توزيع الطلاب
+# تبويب 1: توزيع الطلاب والطالبات
 with tabs[0]:
     col1, col2 = st.columns([1, 1])
     
     with col1:
-        # مخطط دائري لتوزيع الطلاب
+        # مخطط دائري لتوزيع إجمالي الطلاب والطالبات
+        pie_data = pd.DataFrame({
+            "الفئة": ["الطلاب", "الطالبات"],
+            "العدد": [total_students, total_female_students]
+        })
+        
         fig_pie = px.pie(
-            latest_year_data, 
-            values="عدد الطلاب", 
-            names="البرنامج",
-            title="توزيع الطلاب بين البرامج",
-            color_discrete_sequence=px.colors.qualitative.Bold
+            pie_data, 
+            values="العدد", 
+            names="الفئة",
+            title="توزيع الطلاب والطالبات في جميع البرامج",
+            color_discrete_sequence=["#1e88e5", "#E91E63"]  # أزرق للطلاب، وردي للطالبات
         )
         fig_pie.update_traces(textposition='inside', textinfo='percent+label')
         fig_pie.update_layout(
@@ -204,25 +238,26 @@ with tabs[0]:
         st.plotly_chart(fig_pie, use_container_width=True)
     
     with col2:
-        # مخطط شريطي للطلاب حسب البرنامج
+        # مخطط شريطي للطلاب والطالبات حسب البرنامج
         fig_bar = px.bar(
             latest_year_data, 
             y="البرنامج", 
-            x="عدد الطلاب",
-            title="عدد الطلاب في كل برنامج",
-            color="عدد الطلاب",
+            x=["عدد الطلاب", "عدد الطالبات"],
+            title="توزيع الطلاب والطالبات حسب البرنامج",
             orientation='h',
-            color_continuous_scale="Viridis"
+            color_discrete_sequence=["#1e88e5", "#E91E63"],  # أزرق للطلاب، وردي للطالبات
+            barmode="stack"
         )
         fig_bar.update_layout(
-            xaxis_title="عدد الطلاب",
+            xaxis_title="عدد الطلاب والطالبات",
             yaxis_title="البرنامج",
             yaxis={'categoryorder':'total ascending'},
+            legend_title="الفئة",
             height=400
         )
         st.plotly_chart(fig_bar, use_container_width=True)
 
-# تبويب 2: مقارنة المؤشرات
+# تبويب 2: مقارنة البرامج
 with tabs[1]:
     # مخطط بياني مقارن للمؤشرات بين البرامج
     fig_indicators = px.bar(
@@ -242,33 +277,103 @@ with tabs[1]:
     )
     st.plotly_chart(fig_indicators, use_container_width=True)
 
+    # إضافة مخطط جديد لنسبة الطالبات إلى الطلاب
+    latest_year_data["نسبة الطالبات للطلاب"] = (latest_year_data["عدد الطالبات"] / latest_year_data["عدد الطلاب"] * 100).round(1)
+    
+    fig_gender_ratio = px.bar(
+        latest_year_data,
+        x="البرنامج",
+        y="نسبة الطالبات للطلاب",
+        title="نسبة الطالبات إلى الطلاب في كل برنامج (%)",
+        color="نسبة الطالبات للطلاب",
+        color_continuous_scale="RdBu",
+        text_auto='.1f'
+    )
+    fig_gender_ratio.update_layout(
+        xaxis_title="البرنامج",
+        yaxis_title="النسبة المئوية (%)",
+        height=400
+    )
+    st.plotly_chart(fig_gender_ratio, use_container_width=True)
+
 # تبويب 3: التطور السنوي
 with tabs[2]:
     # اختيار البرنامج
-    selected_program = st.selectbox(
-        "اختر البرنامج لعرض تطوره السنوي:",
-        options=yearly_data["البرنامج"].unique()
-    )
+    col1, col2 = st.columns([2, 1])
+    
+    with col1:
+        selected_program = st.selectbox(
+            "اختر البرنامج لعرض تطوره السنوي:",
+            options=yearly_data["البرنامج"].unique()
+        )
+    
+    with col2:
+        gender_option = st.radio(
+            "اختر الفئة:",
+            ["الكل", "الطلاب", "الطالبات"],
+            horizontal=True
+        )
     
     # تصفية البيانات حسب البرنامج المختار
     program_data = yearly_data[yearly_data["البرنامج"] == selected_program]
     
-    # مخطط خطي للتطور السنوي
-    fig_trend = px.line(
+    # مخطط خطي للتطور السنوي للطلاب والطالبات
+    if gender_option == "الكل":
+        fig_students = px.line(
+            program_data,
+            x="العام",
+            y=["عدد الطلاب", "عدد الطالبات", "المجموع"],
+            title=f"تطور أعداد الطلاب والطالبات في برنامج {selected_program} (2020-2024)",
+            labels={"value": "العدد", "variable": "الفئة"},
+            markers=True,
+            color_discrete_sequence=["#1e88e5", "#E91E63", "#27AE60"]
+        )
+    elif gender_option == "الطلاب":
+        fig_students = px.line(
+            program_data,
+            x="العام",
+            y=["عدد الطلاب"],
+            title=f"تطور أعداد الطلاب في برنامج {selected_program} (2020-2024)",
+            labels={"value": "العدد", "variable": "الفئة"},
+            markers=True,
+            color_discrete_sequence=["#1e88e5"]
+        )
+    else:  # الطالبات
+        fig_students = px.line(
+            program_data,
+            x="العام",
+            y=["عدد الطالبات"],
+            title=f"تطور أعداد الطالبات في برنامج {selected_program} (2020-2024)",
+            labels={"value": "العدد", "variable": "الفئة"},
+            markers=True,
+            color_discrete_sequence=["#E91E63"]
+        )
+        
+    fig_students.update_layout(
+        xaxis_title="السنة",
+        yaxis_title="العدد",
+        legend_title="الفئة",
+        height=400
+    )
+    st.plotly_chart(fig_students, use_container_width=True)
+    
+    # مخطط خطي للتطور السنوي للمؤشرات الأخرى
+    fig_indicators = px.line(
         program_data,
         x="العام",
-        y=["عدد الطلاب", "نسبة النجاح", "معدل الرضا"],
-        title=f"تطور مؤشرات برنامج {selected_program} (2020-2024)",
-        labels={"value": "القيمة", "variable": "المؤشر"},
-        markers=True
+        y=["نسبة النجاح", "معدل الرضا"],
+        title=f"تطور المؤشرات في برنامج {selected_program} (2020-2024)",
+        labels={"value": "النسبة المئوية", "variable": "المؤشر"},
+        markers=True,
+        color_discrete_sequence=["#1e88e5", "#27AE60"]
     )
-    fig_trend.update_layout(
+    fig_indicators.update_layout(
         xaxis_title="السنة",
-        yaxis_title="القيمة",
+        yaxis_title="النسبة المئوية",
         legend_title="المؤشر",
-        height=500
+        height=400
     )
-    st.plotly_chart(fig_trend, use_container_width=True)
+    st.plotly_chart(fig_indicators, use_container_width=True)
 
 # ---- أعضاء هيئة التدريس المميزين وأحدث الإنجازات ----
 st.subheader("أعضاء هيئة التدريس والإنجازات")
@@ -314,10 +419,7 @@ with col2:
 # ---- مخطط حراري للمؤشرات الرئيسية ----
 st.subheader("مؤشرات البرامج الرئيسية")
 
-# إنشاء بيانات للمخطط الحراري
-heatmap_data = latest_year_data.pivot(index="البرنامج", columns=None, values=["نسبة النجاح", "معدل الرضا"]).reset_index()
-
-# وضع المخطط الحراري باستخدام Plotly
+# وضع المخطط الحراري باستخدام Plotly بطريقة مباشرة دون استخدام pivot
 fig_heatmap = go.Figure(data=go.Heatmap(
     z=latest_year_data[["نسبة النجاح", "معدل الرضا"]].values,
     x=["نسبة النجاح", "معدل الرضا"],
