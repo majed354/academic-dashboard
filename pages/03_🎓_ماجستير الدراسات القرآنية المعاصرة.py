@@ -1,66 +1,46 @@
+# 03_🎓_ماجستير الدراسات القرآنية المعاصرة.py
 import streamlit as st
 import pandas as pd
 import plotly.express as px
 from streamlit_pdf_viewer import pdf_viewer
 from pages.utils.github_helpers import get_github_file_content, get_available_years, get_available_reports
 
-# إعدادات الصفحة
 st.set_page_config(
     page_title="ماجستير الدراسات القرآنية المعاصرة",
     page_icon="🎓",
     layout="wide"
 )
-# إضافة CSS مخصص لدعم RTL
+
+st.markdown(
+    '<meta name="viewport" content="width=device-width, initial-scale=1">',
+    unsafe_allow_html=True
+)
 st.markdown("""
 <style>
-    /* تعديلات عامة لدعم RTL */
-    .stApp {
-        direction: rtl;
-        text-align: right;
-    }
-    
-    /* ترتيب العناوين من اليمين لليسار */
-    h1, h2, h3, h4, h5, h6 {
-        text-align: right;
-    }
-    
-    /* ترتيب الجداول من اليمين لليسار */
-    .dataframe {
-        text-align: right;
-    }
-    
-    /* محاذاة الأزرار والمدخلات من اليمين */
-    button, input, select, textarea, .stButton>button, .stTextInput>div>div>input {
-        text-align: right;
-    }
-    
-    /* تعديل الهوامش للعناصر */
-    .stMarkdown {
-        text-align: right;
-    }
-    
-    /* تعديل في القائمة الجانبية */
-    .css-1inwz65 {
-        text-align: right;
-    }
-    
-    /* تعديل خاص للمخططات البيانية */
-    .plotly {
-        direction: ltr; /* المخططات تعمل بشكل أفضل مع اتجاه من اليسار لليمين */
+    .stApp { direction: rtl; text-align: right; }
+    h1, h2, h3, h4, h5, h6 { text-align: right; }
+    .dataframe { text-align: right; }
+    button, input, select, textarea, .stButton>button, .stTextInput>div>div>input { text-align: right; }
+    .stMarkdown { text-align: right; }
+    .css-1inwz65 { text-align: right; }
+    .plotly { direction: ltr; }
+    @media only screen and (max-width: 600px) {
+        .stDataFrame, .stPlotlyChart, .streamlit-pdf-viewer { width: 100% !important; }
+        [data-testid="stBlock"] > .row-widget.stColumns { flex-direction: column !important; }
+        [data-testid="stSidebar"] { display: none; }
+        .block-container { padding-left: 0.5rem !important; padding-right: 0.5rem !important; }
     }
 </style>
 """, unsafe_allow_html=True)
+
 st.title("🎓 ماجستير الدراسات القرآنية المعاصرة")
 
-# استخراج السنوات المتاحة وملفات التقارير
 program_code = "master_contemporary"
 available_years, data_file_map = get_available_years(program_code)
 available_reports = get_available_reports(program_code)
 
-# إنشاء عناصر التحكم في الشريط الجانبي
 st.sidebar.header("تصفية البيانات")
 
-# اختيار السنة
 if available_years:
     year_key = f'selected_year_{program_code}'
     if year_key not in st.session_state:
@@ -74,35 +54,27 @@ if available_years:
     )
     st.session_state[year_key] = selected_year
 
-    # عرض البيانات للسنة المختارة
     if selected_year in data_file_map:
         st.header(f"بيانات عام {selected_year}")
         df = get_github_file_content(data_file_map[selected_year])
         if isinstance(df, pd.DataFrame):
-            # عرض البيانات بتنسيق جدول
             st.dataframe(df, use_container_width=True)
-
-            # إنشاء رسم بياني مقارنة بين النسبة والهدف
             if "النسبة المئوية" in df.columns and "الهدف" in df.columns and "المعيار" in df.columns:
                 st.subheader("مقارنة النسب المئوية بالأهداف")
                 fig = px.bar(
-                    df, 
-                    x="المعيار", 
+                    df,
+                    x="المعيار",
                     y=["النسبة المئوية", "الهدف"],
                     barmode="group",
                     title=f"مؤشرات الأداء لعام {selected_year}",
                     labels={"value": "النسبة المئوية", "variable": ""}
                 )
                 st.plotly_chart(fig, use_container_width=True)
-
-                # رسم بياني للاتجاه والتطور (إذا تم تحديد سنة غير الأولى)
-                if selected_year != available_years[-1]:  # إذا لم تكن أقدم سنة متاحة
+                if selected_year != available_years[-1]:
                     st.subheader("تطور المؤشرات خلال السنوات")
-
-                    # جمع بيانات السنوات السابقة
                     trend_data = []
                     for year in available_years:
-                        if year >= selected_year:  # السنة الحالية وما قبلها فقط
+                        if year >= selected_year:
                             year_df = get_github_file_content(data_file_map[year])
                             if isinstance(year_df, pd.DataFrame):
                                 for _, row in year_df.iterrows():
@@ -111,12 +83,11 @@ if available_years:
                                         "المعيار": row["المعيار"],
                                         "النسبة المئوية": row["النسبة المئوية"]
                                     })
-
                     if trend_data:
                         trend_df = pd.DataFrame(trend_data)
                         fig_trend = px.line(
-                            trend_df, 
-                            x="العام", 
+                            trend_df,
+                            x="العام",
                             y="النسبة المئوية",
                             color="المعيار",
                             markers=True,
@@ -128,29 +99,21 @@ if available_years:
 else:
     st.sidebar.warning("لا توجد بيانات سنوية متاحة لهذا البرنامج")
 
-# عرض التقارير
 if available_reports:
     st.sidebar.header("التقارير والمستندات")
     report_key = f'selected_report_{program_code}'
-
-    # استخراج وتصنيف التقارير
     annual_reports = {k: v for k, v in available_reports.items() if k.startswith('تقرير_')}
     desc_files = {k: v for k, v in available_reports.items() if k.startswith('توصيف_')}
-
-    # عرض توصيف البرنامج إذا كان متاحًا
     if desc_files:
         with st.expander("توصيف البرنامج", expanded=False):
             desc_name = list(desc_files.keys())[0]
             desc_content = get_github_file_content(desc_files[desc_name])
             if desc_content:
                 st.markdown(desc_content)
-
-    # اختيار تقرير سنوي
     if annual_reports:
         report_names = list(annual_reports.keys())
         if report_key not in st.session_state:
             st.session_state[report_key] = report_names[0]
-
         selected_report = st.sidebar.selectbox(
             "اختر تقريرًا:",
             report_names,
@@ -158,24 +121,13 @@ if available_reports:
             index=report_names.index(st.session_state[report_key]) if st.session_state[report_key] in report_names else 0
         )
         st.session_state[report_key] = selected_report
-
-        # عرض محتوى التقرير المختار
         if selected_report:
             st.header(f"تقرير: {selected_report.replace('.md', '')}")
             report_content = get_github_file_content(annual_reports[selected_report])
             if report_content:
-                # عرض محتوى التقرير حسب نوع الملف
                 if selected_report.endswith('.md'):
                     st.markdown(report_content)
                 elif selected_report.endswith('.pdf'):
-                    # تخزين بيانات PDF في session_state لضمان استمرارية العرض
-                    pdf_key = f'pdf_data_{selected_report}'
-                    st.session_state[pdf_key] = report_content
-                    # عرض PDF باستخدام pdf_viewer
-                    try:
-                        pdf_viewer(st.session_state[pdf_key], width=700)
-                    except Exception as e:
-                        st.error(f"خطأ في عرض ملف PDF: {e}")
-                        st.link_button("فتح التقرير في تبويب جديد", annual_reports[selected_report])
+                    pdf_viewer(st.session_state[f'pdf_data_{selected_report}'])
 else:
     st.sidebar.warning("لا توجد تقارير متاحة لهذا البرنامج")
