@@ -43,7 +43,47 @@ st.set_page_config(
     page_icon="⚙️",
     layout="wide"
 )
-st.title("⚙️ لوحة الإدارة")
+# إضافة CSS مخصص لدعم RTL
+st.markdown("""
+<style>
+    /* تعديلات عامة لدعم RTL */
+    .stApp {
+        direction: rtl;
+        text-align: right;
+    }
+    
+    /* ترتيب العناوين من اليمين لليسار */
+    h1, h2, h3, h4, h5, h6 {
+        text-align: right;
+    }
+    
+    /* ترتيب الجداول من اليمين لليسار */
+    .dataframe {
+        text-align: right;
+    }
+    
+    /* محاذاة الأزرار والمدخلات من اليمين */
+    button, input, select, textarea, .stButton>button, .stTextInput>div>div>input {
+        text-align: right;
+    }
+    
+    /* تعديل الهوامش للعناصر */
+    .stMarkdown {
+        text-align: right;
+    }
+    
+    /* تعديل في القائمة الجانبية */
+    .css-1inwz65 {
+        text-align: right;
+    }
+    
+    /* تعديل خاص للمخططات البيانية */
+    .plotly {
+        direction: ltr; /* المخططات تعمل بشكل أفضل مع اتجاه من اليسار لليمين */
+    }
+</style>
+""", unsafe_allow_html=True)
+st.title("⚙️ لوحة التحكم")
 st.warning("هذه الصفحة للمستخدمين المخولين فقط. يمكن حمايتها بصلاحيات خاصة.")
 
 # إذا تم تسجيل الدخول بنجاح:
