@@ -7,10 +7,8 @@ from datetime import datetime
 
 # === بيانات الاعتمادات (المستخدمين وكلمات المرور والأدوار) ===
 credentials = {
-    "admin":   {"password": "admin123", "role": "admin"},
-    "mohamed": {"password": "pass456",  "role": "admin"},   # صلاحية مشرف لنفسك
-    "editor1": {"password": "edit789",  "role": "editor"},
-    "viewer1": {"password": "view000",  "role": "viewer"}
+    "admin":   {"password": ADMIN_PASSWORD, "role": "admin"}
+    
 }
 
 # دالة التحقق من اسم المستخدم وكلمة المرور
