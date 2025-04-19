@@ -4,7 +4,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 from pages.utils.github_helpers import get_github_file_content
 from datetime import datetime
-from streamlit_shadcn_ui import ui
+import streamlit_shadcn_ui as ui
 
 # إعدادات الصفحة
 st.set_page_config(
