@@ -3,6 +3,7 @@ primaryColor="#1e88e5"
 backgroundColor="#ffffff"
 secondaryBackgroundColor="#f0f2f6"
 textColor="#31333F"
+base="light"
 
 [server]
 enableCORS = true
@@ -10,3 +11,7 @@ enableXsrfProtection = true
 
 [browser]
 gatherUsageStats = false
+
+[ui]
+# هذا الإعداد سيجعل واجهة المستخدم من اليمين لليسار
+rtl = true
