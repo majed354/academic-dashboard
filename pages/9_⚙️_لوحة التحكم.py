@@ -1,3 +1,4 @@
+```python
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -11,7 +12,7 @@ st.set_page_config(
     layout="wide"
 )
 
-st.title("⚙️ لوحة الإدارة")
+st.title("⚙️ لوحة التحكم")
 st.warning("هذه الصفحة للمستخدمين المخولين فقط. يمكن حمايتها بصلاحيات خاصة.")
 
 # تسجيل الدخول البسيط
@@ -141,15 +142,18 @@ if check_password():
 
         # بيانات تجريبية للتقارير
         reports_data = {
-            "البرنامج": ["بكالوريوس في القرآن وعلومه", "بكالوريوس القراءات", 
-                        "ماجستير الدراسات القرآنية المعاصرة", "بكالوريوس في القرآن وعلومه"],
+            "البرنامج": [
+                "بكالوريوس في القرآن وعلومه",
+                "بكالوريوس القراءات",
+                "ماجستير الدراسات القرآنية المعاصرة",
+                "بكالوريوس في القرآن وعلومه"
+            ],
             "العام": [2024, 2024, 2023, 2023],
             "نوع التقرير": ["تقرير سنوي", "توصيف البرنامج", "تقرير سنوي", "خطة تطوير"],
             "تاريخ الرفع": ["2024-03-15", "2024-02-20", "2023-12-10", "2023-10-05"],
             "الحجم": ["1.2 MB", "3.4 MB", "900 KB", "2.1 MB"]
         }
         reports_df = pd.DataFrame(reports_data)
-
         st.dataframe(reports_df, use_container_width=True)
 
     with tabs[2]:
@@ -163,7 +167,6 @@ if check_password():
             new_username = st.text_input("اسم المستخدم:")
             new_password = st.text_input("كلمة المرور:", type="password")
             confirm_password = st.text_input("تأكيد كلمة المرور:", type="password")
-
         with col2:
             full_name = st.text_input("الاسم الكامل:")
             role = st.selectbox("الدور:", ["مشرف", "محرر", "مستخدم عادي"])
@@ -179,30 +182,29 @@ if check_password():
 
         # قائمة المستخدمين
         st.subheader("قائمة المستخدمين")
-
-        # بيانات تجريبية للمستخدمين
         users_data = {
             "اسم المستخدم": ["admin", "editor1", "user1", "user2"],
             "الاسم الكامل": ["مدير النظام", "محمد أحمد", "سارة محمد", "أحمد علي"],
             "الدور": ["مشرف", "محرر", "مستخدم عادي", "مستخدم عادي"],
-            "البريد الإلكتروني": ["admin@example.com", "editor1@example.com", "user1@example.com", "user2@example.com"],
+            "البريد الإلكتروني": [
+                "admin@example.com",
+                "editor1@example.com",
+                "user1@example.com",
+                "user2@example.com"
+            ],
             "تاريخ الإنشاء": ["2023-01-10", "2023-05-20", "2023-08-15", "2024-02-05"],
             "آخر تسجيل دخول": ["2024-04-19", "2024-04-15", "2024-04-10", "2024-04-05"]
         }
         users_df = pd.DataFrame(users_data)
-
-        # إضافة أزرار للإجراءات
         users_df["الإجراءات"] = None
         st.dataframe(users_df, use_container_width=True)
 
         # حذف مستخدم
         st.subheader("حذف مستخدم")
-
         user_to_delete = st.selectbox("اختر المستخدم للحذف:", users_df["اسم المستخدم"])
         if st.button("حذف المستخدم"):
             st.warning(f"هل أنت متأكد من حذف المستخدم {user_to_delete}؟")
-            confirm_delete = st.button("تأكيد الحذف")
-            if confirm_delete:
+            if st.button("تأكيد الحذف"):
                 st.success(f"تم حذف المستخدم {user_to_delete} بنجاح")
 
     with tabs[3]:
@@ -210,67 +212,55 @@ if check_password():
 
         # إنشاء تقرير مجمع
         st.subheader("إنشاء تقرير مجمع")
-
         report_type = st.selectbox(
             "نوع التقرير:", 
             ["تقرير أداء جميع البرامج", "تقرير تقييمات المقررات", "تقرير استطلاعات الرأي"]
         )
-
         report_year = st.selectbox("العام:", [2024, 2023, 2022, 2021, 2020])
-
         include_charts = st.checkbox("تضمين الرسوم البيانية", value=True)
         include_comments = st.checkbox("تضمين التعليقات والملاحظات", value=True)
 
         if st.button("إنشاء التقرير"):
-            # محاكاة إنشاء التقرير
             st.info("جاري إنشاء التقرير...")
-
             progress_bar = st.progress(0)
             for i in range(100):
                 time.sleep(0.02)
                 progress_bar.progress(i + 1)
-
             st.success("تم إنشاء التقرير بنجاح")
 
             # زر تنزيل التقرير (وهمي)
             current_date = datetime.now().strftime("%Y-%m-%d")
             file_name = f"{report_type}_{report_year}_{current_date}.pdf"
-
             st.download_button(
                 label="تنزيل التقرير",
-                data=b"محتوى تجريبي للتقرير",  # محتوى وهمي للتنزيل
+                data="محتوى تجريبي للتقرير",
                 file_name=file_name,
                 mime="application/pdf"
             )
 
         # تصدير البيانات
         st.subheader("تصدير البيانات")
-
         export_options = st.multiselect(
             "اختر البيانات للتصدير:",
             ["بيانات أداء البرامج", "بيانات التقييمات", "بيانات الاستطلاعات", "بيانات أعضاء هيئة التدريس"]
         )
-
         export_format = st.radio("صيغة التصدير:", ["Excel (.xlsx)", "CSV (.csv)"])
 
         if export_options and st.button("تصدير البيانات"):
-            # محاكاة تصدير البيانات
             st.info("جاري تصدير البيانات...")
-
             progress_bar = st.progress(0)
             for i in range(100):
                 time.sleep(0.01)
                 progress_bar.progress(i + 1)
-
             st.success("تم تصدير البيانات بنجاح")
 
             # زر تنزيل البيانات (وهمي)
             format_ext = ".xlsx" if export_format.startswith("Excel") else ".csv"
             file_name = f"البيانات_المجمعة_{datetime.now().strftime('%Y-%m-%d')}{format_ext}"
-
             st.download_button(
                 label="تنزيل البيانات",
-                data=b"محتوى تجريبي للبيانات",  # محتوى وهمي للتنزيل
+                data="محتوى تجريبي للبيانات",
                 file_name=file_name,
                 mime="application/octet-stream"
             )
+```
