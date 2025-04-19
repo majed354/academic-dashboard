@@ -12,19 +12,25 @@ st.set_page_config(
     layout="wide"
 )
 
-# لتحسين التوافق مع شاشات الجوال وإضافة خطوط احترافية
+# لتحسين التوافق مع شاشات الجوال واستخدام خط Mj Tunisia Lt
 st.markdown(
     '<meta name="viewport" content="width=device-width, initial-scale=1">',
     unsafe_allow_html=True
 )
 st.markdown(
     """
-    <!-- استيراد خط Tajawal من Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
     <style>
+        /* تعريف خط Mj Tunisia Lt */
+        @font-face {
+            font-family: 'Mj Tunisia Lt';
+            src: url('/static/fonts/Mj_TunisiaLt.ttf') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+            font-display: swap;
+        }
         /* تعميم الخط على كامل الصفحة */
-        html, body, [class*="css"], .stMarkdown, .stApp {
-            font-family: 'Tajawal', sans-serif;
+        html, body, [class*="css"], .stApp, .stMarkdown {
+            font-family: 'Mj Tunisia Lt', sans-serif;
         }
 
         /* تعديلات عامة لدعم RTL */
@@ -90,7 +96,6 @@ def load_department_summary():
     try:
         return get_github_file_content("data/department_summary.csv")
     except:
-        # بيانات تجريبية احتياطية
         data = {
             "البرنامج": [
                 "بكالوريوس في القرآن وعلومه",
@@ -132,7 +137,6 @@ def load_yearly_data():
 
 @st.cache_data(ttl=3600)
 def load_faculty_achievements():
-    # بيانات تجريبية للإنجازات
     achievements = [
         {"العضو": "د. محمد أحمد", "الإنجاز": "نشر بحث في مجلة عالمية", "التاريخ": "2025-04-15", "النقاط": 50, "البرنامج": "بكالوريوس في القرآن وعلومه"},
         {"العضو": "د. عائشة سعد", "الإنجاز": "إطلاق مبادرة تعليمية", "التاريخ": "2025-04-10", "النقاط": 40, "البرنامج": "دكتوراه علوم القرآن"},
@@ -151,7 +155,6 @@ def load_top_faculty():
     ]
     return pd.DataFrame(top_faculty)
 
-# محاولة تحميل البيانات
 try:
     dept_data = load_department_summary()
     total_students = dept_data["عدد الطلاب"].sum()
@@ -166,7 +169,6 @@ except Exception as e:
     total_students = 1000
     total_faculty = 50
 
-# ---- بطاقات المقاييس الرئيسية ----
 st.subheader("المؤشرات الرئيسية")
 c1, c2, c3, c4 = st.columns(4)
 with c1:
@@ -178,7 +180,6 @@ with c3:
 with c4:
     st.metric("متوسط رضا الطلاب", "92%", "+4% منذ العام الماضي")
 
-# ---- الرسومات البيانية ----
 st.subheader("تحليل البرامج الأكاديمية")
 tabs = st.tabs(["توزيع الطلاب", "مقارنة المؤشرات", "التطور السنوي"])
 
@@ -234,7 +235,6 @@ with tabs[2]:
     )
     st.plotly_chart(fig_trend, use_container_width=True)
 
-# ---- أعضاء هيئة التدريس المميزين وأحدث الإنجازات ----
 st.subheader("أعضاء هيئة التدريس والإنجازات")
 col1, col2 = st.columns([1, 1])
 
@@ -265,7 +265,6 @@ with col2:
         </div>
         """, unsafe_allow_html=True)
 
-# ---- مخطط حراري للمؤشرات الرئيسية ----
 st.subheader("مؤشرات البرامج الرئيسية")
 fig_heatmap = go.Figure(data=go.Heatmap(
     z=latest_year_data[["نسبة النجاح", "معدل الرضا"]].values,
@@ -279,11 +278,10 @@ fig_heatmap = go.Figure(data=go.Heatmap(
 fig_heatmap.update_layout(title="مقارنة المؤشرات الرئيسية عبر البرامج", margin=dict(t=50,b=0,l=0,r=0), height=400)
 st.plotly_chart(fig_heatmap, use_container_width=True)
 
-# ---- نصائح للمستخدم ----
 st.info("""
 **نصائح للاستخدام:**
 - انقر على اسم أي برنامج في القائمة الجانبية لاستعراض تفاصيله
 - استخدم صفحة "هيئة التدريس" لعرض معلومات الأعضاء
-- قم بزيارة "التقييمات والاستطلاعات" للاطلاع على نتائجالتقييمات
+- قم بزيارة "التقييمات والاستطلاعات" للاطلاع على نتائج التقييمات
 - استخدم "لوحة إنجازات الأعضاء" لتسجيل وعرض إنجازات أعضاء هيئة التدريس
 """)
