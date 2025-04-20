@@ -8,7 +8,7 @@ import hashlib
 
 # --- إعدادات الصفحة ---
 st.set_page_config(
-    page_title="الرئيسية",
+    page_title="الرئيسية", # Title shown in browser tab
     page_icon="🏠",
     layout="wide"
 )
@@ -35,7 +35,9 @@ responsive_menu_html_css = """
     /* --- تنسيق شريط التنقل العلوي (للسطح المكتب) --- */
     .top-navbar {
         background-color: #f8f9fa; padding: 0.5rem 1rem; border-bottom: 1px solid #e7e7e7;
-        margin-bottom: 2rem; width: 100%; box-sizing: border-box; display: none; /* Hidden by default on mobile */
+        /* Removed margin-bottom to reduce space after removing titles */
+        /* margin-bottom: 2rem; */
+        width: 100%; box-sizing: border-box; display: none; /* Hidden by default on mobile */
     }
     .top-navbar ul { list-style: none; padding: 0; margin: 0; display: flex; justify-content: flex-start; align-items: center; }
     .top-navbar li { position: relative; margin-left: 1.5rem; }
@@ -51,9 +53,9 @@ responsive_menu_html_css = """
     /* --- تنسيق زر وقائمة البرجر (للجوال) --- */
     .mobile-menu-trigger {
         display: none; /* Hidden by default on desktop */
-        position: fixed; top: 15px; right: 20px; z-index: 1001;
+        position: fixed; top: 10px; right: 15px; z-index: 1001; /* Adjusted top/right slightly */
         cursor: pointer; background-color: #1e88e5; color: white;
-        padding: 8px 12px; border-radius: 5px; font-size: 1.5rem; line-height: 1;
+        padding: 6px 10px; border-radius: 5px; font-size: 1.3rem; line-height: 1; /* Adjusted size */
         box-shadow: 0 2px 5px rgba(0,0,0,0.2);
     }
     .mobile-menu-checkbox { display: none; /* Hide the actual checkbox */ }
@@ -92,21 +94,20 @@ responsive_menu_html_css = """
         .top-navbar { display: none; } /* Hide desktop menu */
         .mobile-menu-trigger { display: block; } /* Show mobile trigger */
         /* Adjust main content padding if needed when mobile menu might overlap */
-         .main .block-container { padding-right: 1rem !important; padding-left: 1rem !important; }
-         h1 { font-size: 1.3rem; } h2 { font-size: 1.1rem; } h3 { font-size: 1rem; }
+         .main .block-container { padding-right: 1rem !important; padding-left: 1rem !important; padding-top: 55px !important; } /* Add padding-top */
+         /* Removed h1,h2,h3 mobile size adjustments as main titles are removed */
     }
     @media only screen and (min-width: 769px) {
         .top-navbar { display: block; } /* Show desktop menu */
         /* Ensure mobile elements are hidden on desktop */
         .mobile-menu-trigger, .mobile-menu, .mobile-menu-overlay, .mobile-menu-checkbox { display: none; }
-        /* Desktop title size */
-        h1 { font-size: calc(1.2rem + 1vw); } h2, h3 { font-size: calc(1rem + 0.5vw); }
+        /* Removed desktop h1,h2,h3 size adjustments */
     }
 
-    /* --- تنسيقات عامة أخرى (تبقى كما هي) --- */
-    /* ... (metric-card, chart-container, faculty-card, achievement-item, back-to-top, etc.) ... */
-    h1 { color: #1e88e5; padding-bottom: 15px; border-bottom: 2px solid #1e88e5; margin-bottom: 30px; font-weight: 700; }
-    h2, h3 { color: #1e88e5; margin-top: 30px; margin-bottom: 20px; font-weight: 600; }
+    /* --- تنسيقات عامة أخرى --- */
+    /* Main titles h1,h2,h3 styles remain for potential use by subheaders etc. */
+    h1 { color: #1e88e5; padding-bottom: 15px; border-bottom: 2px solid #1e88e5; margin-bottom: 30px; font-weight: 700; font-size: calc(1.2rem + 1vw); }
+    h2, h3 { color: #1e88e5; margin-top: 30px; margin-bottom: 20px; font-weight: 600; font-size: calc(1rem + 0.5vw); }
     .metric-card { background-color: white; border-radius: 10px; padding: 15px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1); text-align: center; margin-bottom: 15px; }
     .chart-container { background-color: white; border-radius: 10px; padding: 10px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1); margin-bottom: 20px; width: 100%; overflow: hidden; }
     .faculty-card { background: linear-gradient(135deg, #f5f7fa 0%, #e3e6f0 100%); border-radius: 10px; padding: 15px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); }
@@ -122,8 +123,7 @@ responsive_menu_html_css = """
     <ul>
         <li><a href="/">الرئيسية</a></li>
         <li class="has-dropdown">
-            <a href="#">البرامج الأكاديمية</a>
-            <div class="dropdown-content">
+            <a href="/البرامج_الاكاديمية">البرامج الأكاديمية</a> <div class="dropdown-content">
                 <a href="/program1">بكالوريوس قرآن وعلومه</a>
                 <a href="/program2">بكالوريوس القراءات</a>
                 <a href="/program3">ماجستير دراسات قرآنية</a>
@@ -190,12 +190,12 @@ responsive_menu_html_css = """
 st.markdown(responsive_menu_html_css, unsafe_allow_html=True)
 
 
-# --- العنوان الرئيسي (يظهر الآن تحت القائمة العلوية) ---
-st.title("🏠 الرئيسية")
+# --- العنوان الرئيسي والعنوان الفرعي (تم حذفها / التعليق عليها) ---
+# st.title("🏠 الرئيسية")
+# st.markdown("### كلية القرآن الكريم والدراسات الإسلامية") # Subtitle
 
 
 # --- بقية محتوى الصفحة ---
-st.markdown("### كلية القرآن الكريم والدراسات الإسلامية") # Subtitle
 
 # دوال مساعدة (تبقى كما هي)
 def is_mobile():
@@ -262,7 +262,7 @@ except Exception as e:
     yearly_data = latest_year_data.copy(); faculty_achievements = pd.DataFrame(); top_faculty = pd.DataFrame()
 
 # عرض المقاييس والرسوم البيانية ... الخ (تبقى كما هي)
-st.subheader("المؤشرات الرئيسية")
+st.subheader("المؤشرات الرئيسية") # This is the remaining title/subheader
 cols_metrics = st.columns(4)
 with cols_metrics[0]: st.metric("إجمالي الطلاب", f"{total_students:,}")
 with cols_metrics[1]: st.metric("أعضاء هيئة التدريس", f"{total_faculty:,}")
