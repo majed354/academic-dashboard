@@ -13,7 +13,8 @@ st.set_page_config(
     layout="wide"
 )
 
-# --- CSS و HTML للقائمة العلوية المتجاوبة (أفقي للكبار، برجر للجوال) ---
+# --- CSS و HTML للقائمة العلوية المتجاوبة (مسطحة ومفصلة) ---
+# ملاحظة: القائمة الآن أطول، قد تلتف على الشاشات المتوسطة.
 responsive_menu_html_css = """
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700&display=swap" rel="stylesheet">
 <style>
@@ -35,39 +36,38 @@ responsive_menu_html_css = """
     /* --- تنسيق شريط التنقل العلوي (للسطح المكتب) --- */
     .top-navbar {
         background-color: #f8f9fa; padding: 0.5rem 1rem; border-bottom: 1px solid #e7e7e7;
-        /* Removed margin-bottom to reduce space after removing titles */
-        /* margin-bottom: 2rem; */
         width: 100%; box-sizing: border-box; display: none; /* Hidden by default on mobile */
     }
-    .top-navbar ul { list-style: none; padding: 0; margin: 0; display: flex; justify-content: flex-start; align-items: center; }
-    .top-navbar li { position: relative; margin-left: 1.5rem; }
+    .top-navbar ul {
+        list-style: none; padding: 0; margin: 0; display: flex;
+        justify-content: flex-start; align-items: center;
+        flex-wrap: wrap; /* Allow wrapping on smaller desktop screens */
+    }
+    .top-navbar li {
+        position: relative; margin-left: 1.2rem; /* Reduced margin */
+        margin-bottom: 0.3rem; /* Add margin if wraps */
+    }
     .top-navbar li:first-child { margin-right: 0; }
-    .top-navbar a { text-decoration: none; color: #333; padding: 0.5rem 0.2rem; display: block; font-weight: 500; }
+    .top-navbar a { text-decoration: none; color: #333; padding: 0.5rem 0.1rem; display: block; font-weight: 500; white-space: nowrap; /* Prevent wrapping within link */ }
     .top-navbar a:hover { color: #1e88e5; }
-    .top-navbar .dropdown-content { display: none; position: absolute; background-color: #ffffff; min-width: 200px; box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.1); z-index: 100; border-radius: 4px; padding: 0.5rem 0; right: 0; top: 100%; }
-    .top-navbar .dropdown-content a { color: black; padding: 10px 15px; display: block; white-space: nowrap; }
-    .top-navbar .dropdown-content a:hover { background-color: #f1f1f1; color: #1e88e5; }
-    .top-navbar li:hover > .dropdown-content { display: block; }
-    .top-navbar .has-dropdown > a::after { content: ' ▼'; font-size: 0.7em; margin-right: 5px; }
+    /* Removed dropdown styles */
 
     /* --- تنسيق زر وقائمة البرجر (للجوال) --- */
     .mobile-menu-trigger {
         display: none; /* Hidden by default on desktop */
-        position: fixed; top: 10px; right: 15px; z-index: 1001; /* Adjusted top/right slightly */
+        position: fixed; top: 10px; right: 15px; z-index: 1001;
         cursor: pointer; background-color: #1e88e5; color: white;
-        padding: 6px 10px; border-radius: 5px; font-size: 1.3rem; line-height: 1; /* Adjusted size */
+        padding: 6px 10px; border-radius: 5px; font-size: 1.3rem; line-height: 1;
         box-shadow: 0 2px 5px rgba(0,0,0,0.2);
     }
-    .mobile-menu-checkbox { display: none; /* Hide the actual checkbox */ }
+    .mobile-menu-checkbox { display: none; }
     .mobile-menu {
-        display: none; /* Hidden by default */
-        position: fixed; top: 0; right: 0; /* Slide in from right for RTL */
+        display: none; position: fixed; top: 0; right: 0;
         width: 250px; height: 100%; background-color: #f8f9fa;
-        z-index: 1000; padding: 60px 20px 20px 20px; /* Padding top for spacing */
+        z-index: 1000; padding: 60px 20px 20px 20px;
         box-shadow: -2px 0 5px rgba(0,0,0,0.1);
         transition: transform 0.3s ease-in-out;
-        transform: translateX(100%); /* Hidden off-screen */
-        overflow-y: auto;
+        transform: translateX(100%); overflow-y: auto;
     }
     .mobile-menu ul { list-style: none; padding: 0; margin: 0; }
     .mobile-menu li { margin-bottom: 0.5rem; }
@@ -75,39 +75,26 @@ responsive_menu_html_css = """
     .mobile-menu a:hover { color: #1e88e5; background-color: #eee; }
 
     /* --- إظهار قائمة البرجر عند تفعيل الـ checkbox --- */
-    .mobile-menu-checkbox:checked ~ .mobile-menu {
-        display: block; /* Make it visible */
-        transform: translateX(0); /* Slide it in */
-    }
-    /* Optional: Overlay to close menu */
-    .mobile-menu-overlay {
-        display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(0,0,0,0.4); z-index: 999;
-    }
-    .mobile-menu-checkbox:checked ~ .mobile-menu-overlay {
-        display: block;
-    }
-
+    .mobile-menu-checkbox:checked ~ .mobile-menu { display: block; transform: translateX(0); }
+    .mobile-menu-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 999; }
+    .mobile-menu-checkbox:checked ~ .mobile-menu-overlay { display: block; }
 
     /* --- قواعد Media Query للتبديل بين القائمتين --- */
     @media only screen and (max-width: 768px) {
-        .top-navbar { display: none; } /* Hide desktop menu */
-        .mobile-menu-trigger { display: block; } /* Show mobile trigger */
-        /* Adjust main content padding if needed when mobile menu might overlap */
-         .main .block-container { padding-right: 1rem !important; padding-left: 1rem !important; padding-top: 55px !important; } /* Add padding-top */
-         /* Removed h1,h2,h3 mobile size adjustments as main titles are removed */
+        .top-navbar { display: none; }
+        .mobile-menu-trigger { display: block; }
+        .main .block-container { padding-right: 1rem !important; padding-left: 1rem !important; padding-top: 55px !important; }
     }
     @media only screen and (min-width: 769px) {
-        .top-navbar { display: block; } /* Show desktop menu */
-        /* Ensure mobile elements are hidden on desktop */
+        .top-navbar { display: block; }
         .mobile-menu-trigger, .mobile-menu, .mobile-menu-overlay, .mobile-menu-checkbox { display: none; }
-        /* Removed desktop h1,h2,h3 size adjustments */
     }
 
     /* --- تنسيقات عامة أخرى --- */
-    /* Main titles h1,h2,h3 styles remain for potential use by subheaders etc. */
-    h1 { color: #1e88e5; padding-bottom: 15px; border-bottom: 2px solid #1e88e5; margin-bottom: 30px; font-weight: 700; font-size: calc(1.2rem + 1vw); }
-    h2, h3 { color: #1e88e5; margin-top: 30px; margin-bottom: 20px; font-weight: 600; font-size: calc(1rem + 0.5vw); }
+    h1,h2,h3 { color: #1e88e5; font-weight: 600; } /* Simplified */
+    h1 { padding-bottom: 15px; border-bottom: 2px solid #1e88e5; margin-bottom: 30px; font-size: calc(1.2rem + 1vw); }
+    h2 { margin-top: 30px; margin-bottom: 20px; font-size: calc(1rem + 0.5vw); }
+    h3 { margin-top: 30px; margin-bottom: 20px; font-size: calc(1rem + 0.2vw); } /* Adjusted h3 size */
     .metric-card { background-color: white; border-radius: 10px; padding: 15px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1); text-align: center; margin-bottom: 15px; }
     .chart-container { background-color: white; border-radius: 10px; padding: 10px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1); margin-bottom: 20px; width: 100%; overflow: hidden; }
     .faculty-card { background: linear-gradient(135deg, #f5f7fa 0%, #e3e6f0 100%); border-radius: 10px; padding: 15px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); }
@@ -122,21 +109,15 @@ responsive_menu_html_css = """
 <nav class="top-navbar">
     <ul>
         <li><a href="/">الرئيسية</a></li>
-        <li class="has-dropdown">
-            <a href="/البرامج_الاكاديمية">البرامج الأكاديمية</a> <div class="dropdown-content">
-                <a href="/program1">بكالوريوس قرآن وعلومه</a>
-                <a href="/program2">بكالوريوس القراءات</a>
-                <a href="/program3">ماجستير دراسات قرآنية</a>
-                <a href="/program4">ماجستير القراءات</a>
-                <a href="/program5">دكتوراه علوم قرآن</a>
-                <a href="/program6">دكتوراه القراءات</a>
-            </div>
-        </li>
         <li><a href="/هيئة_التدريس">هيئة التدريس</a></li>
         <li><a href="/إنجاز_المهام">إنجاز المهام</a></li>
-        <li><a href="/الاستطلاعات_والتقييمات">الاستطلاعات والتقييمات</a></li>
-        <li><a href="/لوحة_التحكم">لوحة التحكم</a></li>
-    </ul>
+        <li><a href="/program1">بكالوريوس قرآن وعلومه</a></li>
+        <li><a href="/program2">بكالوريوس القراءات</a></li>
+        <li><a href="/program3">ماجستير دراسات قرآنية</a></li>
+        <li><a href="/program4">ماجستير القراءات</a></li>
+        <li><a href="/program5">دكتوراه علوم قرآن</a></li>
+        <li><a href="/program6">دكتوراه القراءات</a></li>
+        </ul>
 </nav>
 
 <input type="checkbox" id="mobile-menu-toggle" class="mobile-menu-checkbox">
@@ -145,11 +126,15 @@ responsive_menu_html_css = """
 <div class="mobile-menu">
     <ul>
         <li><a href="/">الرئيسية</a></li>
-        <li><a href="/البرامج_الاكاديمية">البرامج الأكاديمية</a></li> <li><a href="/هيئة_التدريس">هيئة التدريس</a></li>
+        <li><a href="/هيئة_التدريس">هيئة التدريس</a></li>
         <li><a href="/إنجاز_المهام">إنجاز المهام</a></li>
-        <li><a href="/الاستطلاعات_والتقييمات">الاستطلاعات والتقييمات</a></li>
-        <li><a href="/لوحة_التحكم">لوحة التحكم</a></li>
-    </ul>
+        <li><a href="/program1">بكالوريوس قرآن وعلومه</a></li>
+        <li><a href="/program2">بكالوريوس القراءات</a></li>
+        <li><a href="/program3">ماجستير دراسات قرآنية</a></li>
+        <li><a href="/program4">ماجستير القراءات</a></li>
+        <li><a href="/program5">دكتوراه علوم قرآن</a></li>
+        <li><a href="/program6">دكتوراه القراءات</a></li>
+         </ul>
 </div>
 
 
@@ -333,12 +318,13 @@ if not latest_year_data.empty and "البرنامج_المختصر" in display_d
     except Exception as heatmap_error: st.warning(f"لم يتمكن من إنشاء المخطط الحراري: {heatmap_error}")
 elif not latest_year_data.empty: st.info("لا تتوفر بيانات مؤشرات كافية لإنشاء المخطط الحراري.")
 
-# عرض نصائح الاستخدام (تم التحديث ليعكس القائمة المتجاوبة)
+# عرض نصائح الاستخدام (تم التحديث ليعكس القائمة المسطحة)
 with st.expander("💡 نصائح للاستخدام", expanded=False):
     st.markdown("""
-    - **تم تعديل شريط التنقل العلوي:** يظهر أفقيًا على الشاشات الكبيرة مع قائمة منسدلة للبرامج، ويتحول إلى أيقونة برجر (☰) مع قائمة رأسية على الشاشات الصغيرة.
-    - على الجوال، انقر على أيقونة ☰ لإظهار/إخفاء القائمة.
-    - استخدم الروابط في القائمة العلوية أو قائمة الجوال للتنقل.
+    - **تم تعديل شريط التنقل العلوي:** يعرض الآن الأقسام الرئيسية والبرامج الأكاديمية مباشرة بشكل أفقي على الشاشات الكبيرة.
+    - على الجوال، تظهر نفس القائمة بشكل رأسي عند النقر على أيقونة البرجر (☰).
+    - **تم حذف "الاستطلاعات والتقييمات" و "لوحة التحكم" من القائمة.**
+    - استخدم الروابط في القائمة العلوية أو قائمة الجوال للتنقل المباشر.
     - الرسوم البيانية تفاعلية، مرر الفأرة فوقها لرؤية التفاصيل.
     - **مفاتيح الرسوم البيانية تظهر الآن أسفلها لتوفير المساحة.**
     - انقر على زر السهم ↑ في الأسفل للعودة إلى أعلى الصفحة بسرعة.
