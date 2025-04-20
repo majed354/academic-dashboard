@@ -3,8 +3,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-# Removed components import as it's no longer used for the menu
-# import streamlit.components.v1 as components
+# components import is removed as it's not used
 from datetime import datetime
 import hashlib # Added for dummy data generation
 
@@ -12,17 +11,16 @@ import hashlib # Added for dummy data generation
 st.set_page_config(
     page_title="الرئيسية",
     page_icon="🏠",
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="collapsed" # Start with sidebar collapsed
 )
 
-# --- CSS و HTML و JS المدمج (بما في ذلك قائمة البرجر) ---
-# ملاحظة هامة: قائمة البرجر المعتمدة على JavaScript المحقون أدناه
-# قد لا تعمل بشكل موثوق في Streamlit بسبب إعادة التنفيذ (rerun).
-# تم إعادتها هنا لمحاولة إظهار الزر والقائمة بصريًا على الأقل.
-combined_html_css_js = """
+# --- CSS عام (لإخفاء عناصر Streamlit وتطبيق الخطوط و RTL) ---
+# تم تبسيط هذا الجزء ليحتوي فقط على CSS الضروري
+general_css = """
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700&display=swap" rel="stylesheet">
 <style>
-    /* 1. إخفاء عناصر Streamlit الافتراضية */
+    /* 1. إخفاء عناصر Streamlit الافتراضية غير المرغوب فيها */
     [data-testid="stToolbar"], #MainMenu, header, footer,
     [class^="viewerBadge_"], [id^="GithubIcon"],
     [data-testid="stThumbnailsChipContainer"], .stProgress,
@@ -31,8 +29,19 @@ combined_html_css_js = """
     [title*="community"], [title*="profile"],
     h1 > div > a, h2 > div > a, h3 > div > a,
     h4 > div > a, h5 > div > a, h6 > div > a { display: none !important; visibility: hidden !important; }
-    [data-testid="stSidebar"] { display: none !important; }
-    [data-testid="stSidebarNavToggler"], [data-testid="stSidebarCollapseButton"] { display: none !important; }
+
+    /* --- إخفاء الشريط الجانبي الافتراضي وزر تبديله تمامًا --- */
+    /* We will control the sidebar content visibility via session_state */
+    /* Hide the default sidebar structural elements if needed, */
+    /* but allow content to be shown conditionally */
+    /* Let's try hiding only the toggle button first */
+     [data-testid="stSidebarNavToggler"],
+     [data-testid="stSidebarCollapseButton"] {
+          display: none !important;
+     }
+     /* Optional: Hide the sidebar container itself if content is empty */
+     /* section[data-testid="stSidebar"] > div:first-child { display: none; } */
+
 
     /* 2. تطبيق الخط العربي وتنسيقات RTL */
     * { font-family: 'Tajawal', sans-serif !important; }
@@ -47,93 +56,29 @@ combined_html_css_js = """
     .achievement-item { padding: 10px; border-right: 3px solid #1e88e5; margin-bottom: 10px; background-color: rgba(30, 136, 229, 0.05); }
     .stSelectbox label, .stMultiselect label { font-weight: 500; }
 
-    /* 4. تنسيقات قائمة البرجر المنسدلة */
-    .burger-trigger { position: fixed; top: 15px; right: 20px; z-index: 1001; cursor: pointer; background-color: #1e88e5; color: white; padding: 8px 12px; border-radius: 5px; font-size: 1.5rem; line-height: 1; box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: background-color 0.3s ease; }
-    .burger-trigger:hover { background-color: #1565c0; }
-    #burger-menu { position: fixed; top: 60px; right: 20px; width: 250px; background-color: #ffffff; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.15); z-index: 1000; padding: 10px; overflow: hidden; max-height: 80vh; overflow-y: auto; opacity: 0; transform: translateY(-10px) scale(0.98); transform-origin: top right; pointer-events: none; transition: opacity 0.2s ease-out, transform 0.2s ease-out; }
-    #burger-menu.show-menu { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
-    #burger-menu a { display: block; padding: 10px 15px; color: #333; text-decoration: none; font-size: 0.95rem; border-radius: 5px; margin-bottom: 5px; transition: background-color 0.2s ease, color 0.2s ease; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    #burger-menu a:hover { background-color: #e9ecef; color: #1e88e5; }
-    #burger-menu a.active-link { background-color: #1e88e5; color: white; font-weight: 500; }
-    #burger-menu a.active-link:hover { background-color: #1565c0; }
-
-    /* 5. زر العودة للأعلى */
+     /* 4. زر العودة للأعلى */
      .back-to-top { position: fixed; bottom: 20px; left: 20px; width: 40px; height: 40px; background-color: #1e88e5; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 998; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.2); opacity: 0; transition: opacity 0.3s, transform 0.3s; transform: scale(0); }
     .back-to-top.visible { opacity: 1; transform: scale(1); }
 
-    /* 6. تعديلات للهواتف المحمولة */
+    /* 5. تعديلات للهواتف المحمولة (للتباعد العام والعناوين) */
     @media only screen and (max-width: 768px) {
         .main .block-container { padding-right: 1rem !important; padding-left: 1rem !important; }
         h1 { font-size: 1.3rem; margin-bottom: 15px; padding-bottom: 10px; }
         h2 { font-size: 1.1rem; margin-top: 15px; margin-bottom: 10px; }
         h3 { font-size: 1rem; margin-top: 12px; margin-bottom: 8px; }
-        #burger-menu { width: 220px; top: 55px; right: 15px; }
-        .burger-trigger { top: 10px; right: 15px; padding: 6px 10px; font-size: 1.3rem;}
     }
 
-    /* 7. تعديلات للأجهزة اللوحية */
+    /* 6. تعديلات للأجهزة اللوحية (للتباعد العام والعناوين) */
     @media only screen and (min-width: 769px) and (max-width: 1024px) {
         h1 { font-size: 1.7rem; }
         h2, h3 { font-size: 1.2rem; }
     }
 </style>
 
-<div class="burger-trigger" onclick="toggleBurgerMenu(event)">☰</div>
-<div id="burger-menu">
-    <a href="/" target="_top" class="menu-link">🏠 الرئيسية</a>
-    <a href="/هيئة_التدريس" target="_top" class="menu-link">👥 هيئة التدريس</a>
-    <a href="/التقييمات_والاستطلاعات" target="_top" class="menu-link">📊 التقييمات والاستطلاعات</a>
-    <a href="/لوحة_إنجاز_المهام" target="_top" class="menu-link">🎯 لوحة إنجاز المهام</a>
-    <a href="/صفحة_اخرى" target="_top" class="menu-link">📄 صفحة أخرى</a>
-</div>
-
 <div class="back-to-top" onclick="scrollToTop()">
     <span style="font-size: 1.2rem;">↑</span>
 </div>
-
 <script>
-    // --- Burger Menu Logic (Potentially Unreliable due to Streamlit Reruns) ---
-    function initializeBurgerMenu() {
-        const menu = document.getElementById('burger-menu');
-        const trigger = document.querySelector('.burger-trigger');
-        if (!menu || !trigger) { return; }
-
-        window.toggleBurgerMenu = function(event) {
-            try { event.stopPropagation(); menu.classList.toggle('show-menu'); }
-            catch (e) { console.error("Error toggling burger menu:", e); }
-        }
-        window.closeMenu = function() {
-            try { if (menu && menu.classList.contains('show-menu')) { menu.classList.remove('show-menu'); } }
-            catch (e) { console.error("Error closing burger menu:", e); }
-        }
-        try {
-            menu.querySelectorAll('a.menu-link').forEach(link => {
-                link.removeEventListener('click', window.closeMenu);
-                link.addEventListener('click', window.closeMenu);
-            });
-        } catch (e) { console.error("Error adding link listeners:", e); }
-        try {
-            const listenerKey = '_burgerMenuDocClickListener';
-            if (!document[listenerKey]) {
-                 document.addEventListener('mousedown', function(event) {
-                    const currentMenu = document.getElementById('burger-menu');
-                    const currentTrigger = document.querySelector('.burger-trigger');
-                    if (currentMenu && currentTrigger && currentMenu.classList.contains('show-menu')) {
-                         if (!currentMenu.contains(event.target) && !currentTrigger.contains(event.target)) { window.closeMenu(); }
-                    }
-                 }, true);
-                 document[listenerKey] = true;
-            }
-        } catch (e) { console.error("Error adding document click listener:", e); }
-        try { // Active link logic
-            let currentPath = window.location.pathname;
-            try { if (window.parent && window.parent.location.origin === window.location.origin) { currentPath = window.parent.location.pathname; } }
-            catch (securityError) { /* Ignore */ }
-            menu.querySelectorAll('a.menu-link').forEach(link => { /* ... active link logic ... */ });
-             if (currentPath === '/' || currentPath.startsWith('/?')) { const homeLink = menu.querySelector('a[href="/"]'); if(homeLink) homeLink.classList.add('active-link'); }
-        } catch (e) { console.error("Error setting active link:", e); }
-    }
-
     // --- Scroll to Top Logic ---
     window.scrollToTop = function() {
         try { window.scrollTo({ top: 0, behavior: 'smooth' }); }
@@ -148,19 +93,39 @@ combined_html_css_js = """
              }
         });
     } catch(e){ console.error("Error adding scroll listener:", e); }
-
-    // --- Initialization ---
-    if (document.readyState === 'complete' || document.readyState === 'interactive') {
-        initializeBurgerMenu();
-    } else {
-        document.addEventListener('DOMContentLoaded', initializeBurgerMenu);
-    }
-    // Note: This initialization might still fail or listeners might be lost on rerun.
 </script>
 """
+# تطبيق CSS العام وزر العودة للأعلى
+st.markdown(general_css, unsafe_allow_html=True)
 
-# تطبيق CSS و HTML و JS المدمج
-st.markdown(combined_html_css_js, unsafe_allow_html=True)
+# --- زر البرجر للتحكم في الشريط الجانبي ---
+# وضع الزر في الأعلى باستخدام الأعمدة (أو st.container) للتحكم في الموضع
+col1_main, col2_main = st.columns([0.9, 0.1]) # Adjust ratio as needed
+
+with col2_main: # Place button in the smaller right column
+    # استخدام مفتاح فريد للزر
+    if st.button("☰", key="burger_button_toggle", help="فتح/إغلاق القائمة"):
+        # Toggle the state in session_state
+        st.session_state.show_sidebar_content = not st.session_state.get("show_sidebar_content", False)
+        # Force a rerun to update the sidebar visibility immediately (st.button already does this)
+        # st.experimental_rerun() # Usually not needed after st.button
+
+# --- محتوى الشريط الجانبي (يظهر بناءً على الحالة) ---
+# Check the state to decide whether to show sidebar content
+if st.session_state.get("show_sidebar_content", False):
+    with st.sidebar: # Use the default sidebar container
+        st.markdown("### القائمة الرئيسية")
+        # Add navigation links using Markdown
+        # Ensure these paths are correct for your multi-page app structure
+        st.markdown("""
+        - [🏠 الرئيسية](/)
+        - [👥 هيئة التدريس](/هيئة_التدريس)
+        - [📊 التقييمات والاستطلاعات](/التقييمات_والاستطلاعات)
+        - [🎯 لوحة إنجاز المهام](/لوحة_إنجاز_المهام)
+        - [📄 صفحة أخرى](/صفحة_اخرى)
+        """, unsafe_allow_html=True) # Use unsafe_allow_html if needed for complex markdown/html in links
+        st.markdown("---")
+        st.info("انقر على زر ☰ مرة أخرى لإخفاء القائمة.")
 
 
 # --- دوال مساعدة (تبقى كما هي) ---
@@ -211,10 +176,15 @@ def load_top_faculty():
     top_faculty = [ {"الاسم": "د. عائشة سعد", "اللقب": "العضو القمة", "الشارة": "👑", "النقاط": 320, "البرنامج": "دكتوراه علوم القرآن"}, {"الاسم": "د. محمد أحمد", "اللقب": "العضو المميز", "الشارة": "🌟", "النقاط": 280, "البرنامج": "بكالوريوس في القرآن وعلومه"}, {"الاسم": "د. عبدالله محمد", "اللقب": "العضو الفعال", "الشارة": "🔥", "النقاط": 210, "البرنامج": "بكالوريوس القراءات"} ]
     return pd.DataFrame(top_faculty)
 
-# --- محتوى الصفحة (Kept mostly as is, uses the updated prepare_chart_layout) ---
+# --- محتوى الصفحة الرئيسي (Main Page Content) ---
+# (The rest of the page content displaying titles, metrics, charts, etc. remains the same)
+# ... (Previous code for displaying metrics, tabs, charts, faculty info) ...
 mobile_view = is_mobile()
+# Display title etc. (no change needed here)
 st.title("🏠 الرئيسية")
 st.markdown("### كلية القرآن الكريم والدراسات الإسلامية")
+
+# Load data (no change needed here)
 try:
     dept_data = load_department_summary(); total_students = dept_data["عدد الطلاب"].sum() if "عدد الطلاب" in dept_data.columns else 0; total_faculty = dept_data["أعضاء هيئة التدريس"].sum() if "أعضاء هيئة التدريس" in dept_data.columns else 0
     yearly_data = load_yearly_data()
@@ -229,14 +199,16 @@ except Exception as e:
     latest_year_data = pd.DataFrame({ "العام": [2024], "البرنامج": ["برنامج تجريبي"], "عدد الطلاب": [1000], "نسبة النجاح": [85], "معدل الرضا": [90] })
     yearly_data = latest_year_data.copy(); faculty_achievements = pd.DataFrame(); top_faculty = pd.DataFrame()
 
+# Display metrics (no change needed here)
 st.subheader("المؤشرات الرئيسية")
 cols = st.columns(4)
 with cols[0]: st.metric("إجمالي الطلاب", f"{total_students:,}")
 with cols[1]: st.metric("أعضاء هيئة التدريس", f"{total_faculty:,}")
-indicators_to_plot = [] # Define indicators_to_plot here
+indicators_to_plot = []
 if not latest_year_data.empty and "نسبة النجاح" in latest_year_data.columns: avg_success = latest_year_data["نسبة النجاح"].mean(); indicators_to_plot.append("نسبة النجاح"); cols[2].metric("متوسط النجاح", f"{avg_success:.0f}%")
 if not latest_year_data.empty and "معدل الرضا" in latest_year_data.columns: avg_satisfaction = latest_year_data["معدل الرضا"].mean(); indicators_to_plot.append("معدل الرضا"); cols[3].metric("متوسط الرضا", f"{avg_satisfaction:.0f}%")
 
+# Display charts within tabs (no change needed here, uses updated prepare_chart_layout)
 if not latest_year_data.empty and "البرنامج" in latest_year_data.columns and "عدد الطلاب" in latest_year_data.columns:
     st.subheader("تحليل البرامج الأكاديمية")
     program_mapping = { "بكالوريوس في القرآن وعلومه": "ب. قرآن", "بكالوريوس القراءات": "ب. قراءات", "ماجستير الدراسات القرآنية المعاصرة": "م. دراسات", "ماجستير القراءات": "م. قراءات", "دكتوراه علوم القرآن": "د. قرآن", "دكتوراه القراءات": "د. قراءات" }
@@ -249,7 +221,6 @@ if not latest_year_data.empty and "البرنامج" in latest_year_data.columns
         with col1: fig_pie = px.pie(display_data, values="عدد الطلاب", names="البرنامج_المختصر", title="توزيع الطلاب", color_discrete_sequence=px.colors.qualitative.Pastel); fig_pie = prepare_chart_layout(fig_pie, "توزيع الطلاب", is_mobile=mobile_view, chart_type="pie"); st.plotly_chart(fig_pie, use_container_width=True, config={"displayModeBar": False})
         with col2: fig_bar = px.bar(display_data.sort_values("عدد الطلاب", ascending=True), y="البرنامج_المختصر", x="عدد الطلاب", title="عدد الطلاب لكل برنامج", color="عدد الطلاب", orientation='h', color_continuous_scale="Blues"); fig_bar = prepare_chart_layout(fig_bar, "عدد الطلاب لكل برنامج", is_mobile=mobile_view, chart_type="bar"); st.plotly_chart(fig_bar, use_container_width=True, config={"displayModeBar": False})
     with tabs[1]:
-         # Now prepare_chart_layout handles the legend position automatically
          if indicators_to_plot: fig_indicators = px.bar(display_data, x="البرنامج_المختصر", y=indicators_to_plot, barmode="group", title="مقارنة المؤشرات", labels={"value": "النسبة المئوية", "variable": "المؤشر", "البرنامج_المختصر": "البرنامج"}, color_discrete_sequence=["#1e88e5", "#27AE60"]); fig_indicators = prepare_chart_layout(fig_indicators, "مقارنة المؤشرات", is_mobile=mobile_view, chart_type="bar"); st.plotly_chart(fig_indicators, use_container_width=True, config={"displayModeBar": False})
          else: st.info("لا توجد بيانات مؤشرات لعرض المقارنة.")
     with tabs[2]:
@@ -261,12 +232,12 @@ if not latest_year_data.empty and "البرنامج" in latest_year_data.columns
             if "عدد الطلاب" in program_data.columns: trend_indicators.append("عدد الطلاب")
             if "نسبة النجاح" in program_data.columns: trend_indicators.append("نسبة النجاح")
             if "معدل الرضا" in program_data.columns: trend_indicators.append("معدل الرضا")
-            # Now prepare_chart_layout handles the legend position automatically
             if trend_indicators and "العام" in program_data.columns: fig_trend = px.line(program_data, x="العام", y=trend_indicators, title=f"تطور مؤشرات: {selected_display_program}", labels={"value": "القيمة", "variable": "المؤشر", "العام": "السنة"}, markers=True); fig_trend = prepare_chart_layout(fig_trend, f"تطور: {selected_display_program}", is_mobile=mobile_view, chart_type="line"); st.plotly_chart(fig_trend, use_container_width=True, config={"displayModeBar": False})
             else: st.info(f"لا توجد بيانات كافية لعرض التطور السنوي لبرنامج {selected_display_program}.")
         else: st.info("لا توجد بيانات سنوية لعرض التطور.")
 else: st.info("لا توجد بيانات كافية لعرض الرسوم البيانية للبرامج.")
 
+# Display faculty info (no change needed here)
 st.subheader("أعضاء هيئة التدريس والإنجازات")
 if not top_faculty.empty or not faculty_achievements.empty:
     col1, col2 = st.columns([1, 1])
@@ -288,7 +259,7 @@ if not top_faculty.empty or not faculty_achievements.empty:
         else: st.info("لا توجد بيانات لأحدث الإنجازات.")
 else: st.info("لا تتوفر بيانات أعضاء هيئة التدريس أو الإنجازات حاليًا.")
 
-# Heatmap section remains the same, as prepare_chart_layout applies general layout
+# Display heatmap (no change needed here)
 if not latest_year_data.empty and "البرنامج_المختصر" in display_data.columns and indicators_to_plot:
     st.subheader("نظرة عامة على المؤشرات")
     try:
@@ -300,12 +271,13 @@ if not latest_year_data.empty and "البرنامج_المختصر" in display_d
     except Exception as heatmap_error: st.warning(f"لم يتمكن من إنشاء المخطط الحراري: {heatmap_error}")
 elif not latest_year_data.empty: st.info("لا تتوفر بيانات مؤشرات كافية لإنشاء المخطط الحراري.")
 
-
+# Display usage tips (updated)
 with st.expander("💡 نصائح للاستخدام", expanded=False):
     st.markdown("""
-    - **قائمة البرجر (☰):** تم إعادتها إلى `st.markdown`. قد تعمل بشكل متقطع بسبب قيود Streamlit. الحل الموثوق هو بناء مكون مخصص.
+    - **تم استبدال قائمة البرجر المخصصة بزر (☰) في الأعلى يتحكم بظهور الشريط الجانبي القياسي لـ Streamlit.** هذا هو الحل الأكثر موثوقية.
+    - انقر على زر ☰ لإظهار/إخفاء قائمة التنقل في الشريط الجانبي.
     - **تم إخفاء السهم الإضافي في الزاوية العلوية اليسرى.**
-    - استخدم الروابط في القائمة (إذا عملت) أو عناصر التحكم الأخرى (مثل التبويبات والقوائم المنسدلة) لاستعراض التفاصيل.
+    - استخدم الروابط في الشريط الجانبي للتنقل بين الصفحات.
     - الرسوم البيانية تفاعلية، مرر الفأرة فوقها لرؤية التفاصيل.
     - **مفاتيح الرسوم البيانية تظهر الآن أسفلها لتوفير المساحة.**
     - انقر على زر السهم ↑ في الأسفل للعودة إلى أعلى الصفحة بسرعة.
