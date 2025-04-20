@@ -68,7 +68,7 @@ hide_streamlit_elements = """
     .stProgress {display: none !important;}
 </style>
 """
-st.markdown(hide_elements, unsafe_allow_html=True)
+st.markdown(hide_streamlit_elements, unsafe_allow_html=True)
 # ضبط viewport للشاشات المتجاوبة
 st.markdown('<meta name="viewport" content="width=device-width, initial-scale=1">', unsafe_allow_html=True)
 
