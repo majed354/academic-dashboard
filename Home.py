@@ -12,11 +12,11 @@ st.set_page_config(
     page_title="الرئيسية",
     page_icon="🏠",
     layout="wide",
-    initial_sidebar_state="collapsed" # Start with sidebar collapsed
+    # initial_sidebar_state is not needed anymore
 )
 
 # --- CSS عام (لإخفاء عناصر Streamlit وتطبيق الخطوط و RTL) ---
-# تم تبسيط هذا الجزء ليحتوي فقط على CSS الضروري
+# تم إزالة CSS الخاص بإخفاء أزرار تبديل الشريط الجانبي
 general_css = """
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700&display=swap" rel="stylesheet">
 <style>
@@ -30,17 +30,8 @@ general_css = """
     h1 > div > a, h2 > div > a, h3 > div > a,
     h4 > div > a, h5 > div > a, h6 > div > a { display: none !important; visibility: hidden !important; }
 
-    /* --- إخفاء الشريط الجانبي الافتراضي وزر تبديله تمامًا --- */
-    /* We will control the sidebar content visibility via session_state */
-    /* Hide the default sidebar structural elements if needed, */
-    /* but allow content to be shown conditionally */
-    /* Let's try hiding only the toggle button first */
-     [data-testid="stSidebarNavToggler"],
-     [data-testid="stSidebarCollapseButton"] {
-          display: none !important;
-     }
-     /* Optional: Hide the sidebar container itself if content is empty */
-     /* section[data-testid="stSidebar"] > div:first-child { display: none; } */
+    /* Optional: Hide the default sidebar if it appears empty */
+    /* section[data-testid="stSidebar"][aria-expanded="false"] { display: none; } */
 
 
     /* 2. تطبيق الخط العربي وتنسيقات RTL */
@@ -66,6 +57,8 @@ general_css = """
         h1 { font-size: 1.3rem; margin-bottom: 15px; padding-bottom: 10px; }
         h2 { font-size: 1.1rem; margin-top: 15px; margin-bottom: 10px; }
         h3 { font-size: 1rem; margin-top: 12px; margin-bottom: 8px; }
+        /* Adjust expander width/position if needed on mobile */
+        /* div[data-testid="stExpander"] { ... } */
     }
 
     /* 6. تعديلات للأجهزة اللوحية (للتباعد العام والعناوين) */
@@ -98,23 +91,13 @@ general_css = """
 # تطبيق CSS العام وزر العودة للأعلى
 st.markdown(general_css, unsafe_allow_html=True)
 
-# --- زر البرجر للتحكم في الشريط الجانبي ---
-# وضع الزر في الأعلى باستخدام الأعمدة (أو st.container) للتحكم في الموضع
-col1_main, col2_main = st.columns([0.9, 0.1]) # Adjust ratio as needed
 
-with col2_main: # Place button in the smaller right column
-    # استخدام مفتاح فريد للزر
-    if st.button("☰", key="burger_button_toggle", help="فتح/إغلاق القائمة"):
-        # Toggle the state in session_state
-        st.session_state.show_sidebar_content = not st.session_state.get("show_sidebar_content", False)
-        # Force a rerun to update the sidebar visibility immediately (st.button already does this)
-        # st.experimental_rerun() # Usually not needed after st.button
+# --- القائمة باستخدام Expander في الأعلى ---
+# استخدام الأعمدة لوضع القائمة في اليمين والعنوان في اليسار (في RTL)
+col_menu, col_title_main = st.columns([0.3, 0.7]) # Adjust ratio as needed
 
-# --- محتوى الشريط الجانبي (يظهر بناءً على الحالة) ---
-# Check the state to decide whether to show sidebar content
-if st.session_state.get("show_sidebar_content", False):
-    with st.sidebar: # Use the default sidebar container
-        st.markdown("### القائمة الرئيسية")
+with col_menu:
+    with st.expander("☰ القائمة", expanded=False):
         # Add navigation links using Markdown
         # Ensure these paths are correct for your multi-page app structure
         st.markdown("""
@@ -123,12 +106,17 @@ if st.session_state.get("show_sidebar_content", False):
         - [📊 التقييمات والاستطلاعات](/التقييمات_والاستطلاعات)
         - [🎯 لوحة إنجاز المهام](/لوحة_إنجاز_المهام)
         - [📄 صفحة أخرى](/صفحة_اخرى)
-        """, unsafe_allow_html=True) # Use unsafe_allow_html if needed for complex markdown/html in links
-        st.markdown("---")
-        st.info("انقر على زر ☰ مرة أخرى لإخفاء القائمة.")
+        """, unsafe_allow_html=True) # Use unsafe_allow_html if needed
+
+# --- العنوان الرئيسي (الآن في العمود الثاني) ---
+with col_title_main:
+    st.title("🏠 الرئيسية") # Keep title simple
+    # st.markdown("### كلية القرآن الكريم والدراسات الإسلامية") # Subtitle can be moved below if needed
 
 
-# --- دوال مساعدة (تبقى كما هي) ---
+# --- بقية محتوى الصفحة ---
+
+# دوال مساعدة (تبقى كما هي)
 def is_mobile():
     if 'IS_MOBILE' not in st.session_state: st.session_state.IS_MOBILE = False
     return st.session_state.IS_MOBILE
@@ -152,7 +140,7 @@ def prepare_chart_layout(fig, title, is_mobile=False, chart_type="bar"):
     except Exception as e: st.warning(f"Could not apply layout settings for chart '{title}': {e}")
     return fig
 
-# --- دوال تحميل البيانات (Dummy implementations - Kept as is) ---
+# دوال تحميل البيانات (Dummy implementations - Kept as is)
 def get_github_file_content(path):
      st.warning(f"Using dummy data for {path}. Implement `get_github_file_content`.")
      if "department_summary.csv" in path: data = { "البرنامج": ["بكالوريوس في القرآن وعلومه", "بكالوريوس القراءات", "ماجستير الدراسات القرآنية المعاصرة", "ماجستير القراءات", "دكتوراه علوم القرآن", "دكتوراه القراءات"], "عدد الطلاب": [210, 180, 150, 200, 120, 140], "أعضاء هيئة التدريس": [15, 12, 8, 10, 5, 6] }; return pd.DataFrame(data)
@@ -176,15 +164,8 @@ def load_top_faculty():
     top_faculty = [ {"الاسم": "د. عائشة سعد", "اللقب": "العضو القمة", "الشارة": "👑", "النقاط": 320, "البرنامج": "دكتوراه علوم القرآن"}, {"الاسم": "د. محمد أحمد", "اللقب": "العضو المميز", "الشارة": "🌟", "النقاط": 280, "البرنامج": "بكالوريوس في القرآن وعلومه"}, {"الاسم": "د. عبدالله محمد", "اللقب": "العضو الفعال", "الشارة": "🔥", "النقاط": 210, "البرنامج": "بكالوريوس القراءات"} ]
     return pd.DataFrame(top_faculty)
 
-# --- محتوى الصفحة الرئيسي (Main Page Content) ---
-# (The rest of the page content displaying titles, metrics, charts, etc. remains the same)
-# ... (Previous code for displaying metrics, tabs, charts, faculty info) ...
+# تحميل البيانات (تبقى كما هي)
 mobile_view = is_mobile()
-# Display title etc. (no change needed here)
-st.title("🏠 الرئيسية")
-st.markdown("### كلية القرآن الكريم والدراسات الإسلامية")
-
-# Load data (no change needed here)
 try:
     dept_data = load_department_summary(); total_students = dept_data["عدد الطلاب"].sum() if "عدد الطلاب" in dept_data.columns else 0; total_faculty = dept_data["أعضاء هيئة التدريس"].sum() if "أعضاء هيئة التدريس" in dept_data.columns else 0
     yearly_data = load_yearly_data()
@@ -199,16 +180,19 @@ except Exception as e:
     latest_year_data = pd.DataFrame({ "العام": [2024], "البرنامج": ["برنامج تجريبي"], "عدد الطلاب": [1000], "نسبة النجاح": [85], "معدل الرضا": [90] })
     yearly_data = latest_year_data.copy(); faculty_achievements = pd.DataFrame(); top_faculty = pd.DataFrame()
 
-# Display metrics (no change needed here)
-st.subheader("المؤشرات الرئيسية")
-cols = st.columns(4)
-with cols[0]: st.metric("إجمالي الطلاب", f"{total_students:,}")
-with cols[1]: st.metric("أعضاء هيئة التدريس", f"{total_faculty:,}")
-indicators_to_plot = []
-if not latest_year_data.empty and "نسبة النجاح" in latest_year_data.columns: avg_success = latest_year_data["نسبة النجاح"].mean(); indicators_to_plot.append("نسبة النجاح"); cols[2].metric("متوسط النجاح", f"{avg_success:.0f}%")
-if not latest_year_data.empty and "معدل الرضا" in latest_year_data.columns: avg_satisfaction = latest_year_data["معدل الرضا"].mean(); indicators_to_plot.append("معدل الرضا"); cols[3].metric("متوسط الرضا", f"{avg_satisfaction:.0f}%")
+# عرض العنوان الفرعي والعناصر الأخرى
+st.markdown("### كلية القرآن الكريم والدراسات الإسلامية") # Moved subtitle here
 
-# Display charts within tabs (no change needed here, uses updated prepare_chart_layout)
+# عرض المقاييس (تبقى كما هي)
+st.subheader("المؤشرات الرئيسية")
+cols_metrics = st.columns(4) # Use a different variable name
+with cols_metrics[0]: st.metric("إجمالي الطلاب", f"{total_students:,}")
+with cols_metrics[1]: st.metric("أعضاء هيئة التدريس", f"{total_faculty:,}")
+indicators_to_plot = []
+if not latest_year_data.empty and "نسبة النجاح" in latest_year_data.columns: avg_success = latest_year_data["نسبة النجاح"].mean(); indicators_to_plot.append("نسبة النجاح"); cols_metrics[2].metric("متوسط النجاح", f"{avg_success:.0f}%")
+if not latest_year_data.empty and "معدل الرضا" in latest_year_data.columns: avg_satisfaction = latest_year_data["معدل الرضا"].mean(); indicators_to_plot.append("معدل الرضا"); cols_metrics[3].metric("متوسط الرضا", f"{avg_satisfaction:.0f}%")
+
+# عرض الرسوم البيانية داخل التبويبات (تبقى كما هي)
 if not latest_year_data.empty and "البرنامج" in latest_year_data.columns and "عدد الطلاب" in latest_year_data.columns:
     st.subheader("تحليل البرامج الأكاديمية")
     program_mapping = { "بكالوريوس في القرآن وعلومه": "ب. قرآن", "بكالوريوس القراءات": "ب. قراءات", "ماجستير الدراسات القرآنية المعاصرة": "م. دراسات", "ماجستير القراءات": "م. قراءات", "دكتوراه علوم القرآن": "د. قرآن", "دكتوراه القراءات": "د. قراءات" }
@@ -217,9 +201,9 @@ if not latest_year_data.empty and "البرنامج" in latest_year_data.columns
     else: display_data["البرنامج_المختصر"] = display_data["البرنامج"]
     tab_labels = ["توزيع الطلاب", "مقارنة المؤشرات", "التطور السنوي"]; tabs = st.tabs(tab_labels)
     with tabs[0]:
-        col1, col2 = st.columns([1, 1])
-        with col1: fig_pie = px.pie(display_data, values="عدد الطلاب", names="البرنامج_المختصر", title="توزيع الطلاب", color_discrete_sequence=px.colors.qualitative.Pastel); fig_pie = prepare_chart_layout(fig_pie, "توزيع الطلاب", is_mobile=mobile_view, chart_type="pie"); st.plotly_chart(fig_pie, use_container_width=True, config={"displayModeBar": False})
-        with col2: fig_bar = px.bar(display_data.sort_values("عدد الطلاب", ascending=True), y="البرنامج_المختصر", x="عدد الطلاب", title="عدد الطلاب لكل برنامج", color="عدد الطلاب", orientation='h', color_continuous_scale="Blues"); fig_bar = prepare_chart_layout(fig_bar, "عدد الطلاب لكل برنامج", is_mobile=mobile_view, chart_type="bar"); st.plotly_chart(fig_bar, use_container_width=True, config={"displayModeBar": False})
+        col1_tab1, col2_tab1 = st.columns([1, 1]) # Use unique names for columns in tabs
+        with col1_tab1: fig_pie = px.pie(display_data, values="عدد الطلاب", names="البرنامج_المختصر", title="توزيع الطلاب", color_discrete_sequence=px.colors.qualitative.Pastel); fig_pie = prepare_chart_layout(fig_pie, "توزيع الطلاب", is_mobile=mobile_view, chart_type="pie"); st.plotly_chart(fig_pie, use_container_width=True, config={"displayModeBar": False})
+        with col2_tab1: fig_bar = px.bar(display_data.sort_values("عدد الطلاب", ascending=True), y="البرنامج_المختصر", x="عدد الطلاب", title="عدد الطلاب لكل برنامج", color="عدد الطلاب", orientation='h', color_continuous_scale="Blues"); fig_bar = prepare_chart_layout(fig_bar, "عدد الطلاب لكل برنامج", is_mobile=mobile_view, chart_type="bar"); st.plotly_chart(fig_bar, use_container_width=True, config={"displayModeBar": False})
     with tabs[1]:
          if indicators_to_plot: fig_indicators = px.bar(display_data, x="البرنامج_المختصر", y=indicators_to_plot, barmode="group", title="مقارنة المؤشرات", labels={"value": "النسبة المئوية", "variable": "المؤشر", "البرنامج_المختصر": "البرنامج"}, color_discrete_sequence=["#1e88e5", "#27AE60"]); fig_indicators = prepare_chart_layout(fig_indicators, "مقارنة المؤشرات", is_mobile=mobile_view, chart_type="bar"); st.plotly_chart(fig_indicators, use_container_width=True, config={"displayModeBar": False})
          else: st.info("لا توجد بيانات مؤشرات لعرض المقارنة.")
@@ -237,18 +221,18 @@ if not latest_year_data.empty and "البرنامج" in latest_year_data.columns
         else: st.info("لا توجد بيانات سنوية لعرض التطور.")
 else: st.info("لا توجد بيانات كافية لعرض الرسوم البيانية للبرامج.")
 
-# Display faculty info (no change needed here)
+# عرض معلومات هيئة التدريس (تبقى كما هي)
 st.subheader("أعضاء هيئة التدريس والإنجازات")
 if not top_faculty.empty or not faculty_achievements.empty:
-    col1, col2 = st.columns([1, 1])
-    with col1:
+    col1_faculty, col2_faculty = st.columns([1, 1]) # Use unique names
+    with col1_faculty:
         st.markdown("#### 🏆 المميزون")
         if not top_faculty.empty:
             num_to_display = min(len(top_faculty), 3)
             for _, member in top_faculty.head(num_to_display).iterrows(): name = member.get('الاسم', 'غير متوفر'); badge = member.get('الشارة', ''); title = member.get('اللقب', ''); points = member.get('النقاط', ''); st.markdown(f"""<div class='faculty-card'><h5 style="margin-bottom: 5px;">{badge} {name}</h5><p style="font-size: 0.9em; margin: 2px 0;">{title} ({points} نقطة)</p></div>""", unsafe_allow_html=True)
             st.markdown("<a href='/هيئة_التدريس' target='_top' style='font-size: 0.9em;'>عرض الكل...</a>", unsafe_allow_html=True)
         else: st.info("لا توجد بيانات لأعضاء هيئة التدريس المميزين.")
-    with col2:
+    with col2_faculty:
         st.markdown("#### 🌟 أحدث الإنجازات")
         if not faculty_achievements.empty:
             num_to_display = min(len(faculty_achievements), 3)
@@ -259,7 +243,7 @@ if not top_faculty.empty or not faculty_achievements.empty:
         else: st.info("لا توجد بيانات لأحدث الإنجازات.")
 else: st.info("لا تتوفر بيانات أعضاء هيئة التدريس أو الإنجازات حاليًا.")
 
-# Display heatmap (no change needed here)
+# عرض الخريطة الحرارية (تبقى كما هي)
 if not latest_year_data.empty and "البرنامج_المختصر" in display_data.columns and indicators_to_plot:
     st.subheader("نظرة عامة على المؤشرات")
     try:
@@ -271,13 +255,12 @@ if not latest_year_data.empty and "البرنامج_المختصر" in display_d
     except Exception as heatmap_error: st.warning(f"لم يتمكن من إنشاء المخطط الحراري: {heatmap_error}")
 elif not latest_year_data.empty: st.info("لا تتوفر بيانات مؤشرات كافية لإنشاء المخطط الحراري.")
 
-# Display usage tips (updated)
+# عرض نصائح الاستخدام (تم التحديث ليعكس استخدام Expander)
 with st.expander("💡 نصائح للاستخدام", expanded=False):
     st.markdown("""
-    - **تم استبدال قائمة البرجر المخصصة بزر (☰) في الأعلى يتحكم بظهور الشريط الجانبي القياسي لـ Streamlit.** هذا هو الحل الأكثر موثوقية.
-    - انقر على زر ☰ لإظهار/إخفاء قائمة التنقل في الشريط الجانبي.
+    - **تم استبدال زر البرجر بقائمة قابلة للطي (☰ القائمة) في أعلى يمين الصفحة.** انقر عليها لإظهار/إخفاء روابط التنقل.
     - **تم إخفاء السهم الإضافي في الزاوية العلوية اليسرى.**
-    - استخدم الروابط في الشريط الجانبي للتنقل بين الصفحات.
+    - استخدم الروابط في القائمة القابلة للطي للتنقل بين الصفحات.
     - الرسوم البيانية تفاعلية، مرر الفأرة فوقها لرؤية التفاصيل.
     - **مفاتيح الرسوم البيانية تظهر الآن أسفلها لتوفير المساحة.**
     - انقر على زر السهم ↑ في الأسفل للعودة إلى أعلى الصفحة بسرعة.
