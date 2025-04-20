@@ -10,6 +10,49 @@ st.set_page_config(
     page_icon="📚",
     layout="wide"
 )
+hide_streamlit_elements = """
+<style>
+  /* 1. أخفِ شريط الـheader والـmenu الافتراضي */
+  [data-testid="stToolbar"] { visibility: hidden !important; }
+  #MainMenu               { visibility: hidden !important; }
+  header                  { visibility: hidden !important; }
+
+  /* 2. أخفِ الفوتر */
+  footer                  { visibility: hidden !important; }
+
+  /* 3. أخفِ أيقونة GitHub وبادج “Created by” */
+  [class^="viewerBadge_"], [id^="GithubIcon"] {
+    display: none !important;
+  }
+  [data-testid="stThumbnailsChipContainer"] {
+    display: none !important;
+  }
+
+  /* 4. أخفِ شريط التقدم */
+  .stProgress             { display: none !important; }
+
+  /* 5. استثناء للشريط الجانبي: أبقه مرئيًّا */
+  [data-testid="stSidebar"] {
+    display: block !important;
+  }
+
+  /* 6. أخفِ عناصر التنقل السفلية فقط (بدون تعميم nav) */
+  [data-testid="stBottomNavBar"],
+  [data-testid*="bottomNav"],
+  [aria-label*="community"],
+  [aria-label*="profile"],
+  [title*="community"],
+  [title*="profile"] {
+    display: none !important;
+  }
+
+  /* 7. إزالة روابط الترسّخ في العناوين */
+  h1 > div > a, h2 > div > a, h3 > div > a,
+  h4 > div > a, h5 > div > a, h6 > div > a {
+    display: none !important;
+  }
+</style>
+"""
 
 # إضافة CSS مخصص لدعم RTL وتحسين الاستجابة للجوال
 st.markdown("""
