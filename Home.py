@@ -7,13 +7,7 @@ import plotly.graph_objects as go
 from datetime import datetime
 import hashlib # Added for dummy data generation
 
-# --- إعدادات الصفحة ---
-st.set_page_config(
-    page_title="الرئيسية",
-    page_icon="🏠",
-    layout="wide",
-    # initial_sidebar_state is not needed anymore
-)
+
 
 # --- CSS عام (لإخفاء عناصر Streamlit وتطبيق الخطوط و RTL) ---
 # تم إزالة CSS الخاص بإخفاء أزرار تبديل الشريط الجانبي
