@@ -3,20 +3,25 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-# components import is removed as it's not used
 from datetime import datetime
-import hashlib # Added for dummy data generation
+import hashlib
 
-# --- إعدادات الصفحة ---
+# --- تهيئة حالة الشريط الجانبي ---
+# يجب أن يتم هذا قبل استدعاء st.set_page_config
+if 'sidebar_state' not in st.session_state:
+    st.session_state.sidebar_state = 'collapsed' # Default state
+
+# --- إعدادات الصفحة (يجب أن يكون أول أمر Streamlit) ---
+# يتم تعيين الحالة الأولية بناءً على st.session_state
 st.set_page_config(
     page_title="الرئيسية",
     page_icon="🏠",
     layout="wide",
-    # initial_sidebar_state is not needed anymore
+    initial_sidebar_state=st.session_state.sidebar_state # Control initial state
 )
 
 # --- CSS عام (لإخفاء عناصر Streamlit وتطبيق الخطوط و RTL) ---
-# تم إزالة CSS الخاص بإخفاء أزرار تبديل الشريط الجانبي
+# تم إزالة CSS الخاص بإخفاء الشريط الجانبي أو أزرار تبديله
 general_css = """
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700&display=swap" rel="stylesheet">
 <style>
@@ -29,10 +34,6 @@ general_css = """
     [title*="community"], [title*="profile"],
     h1 > div > a, h2 > div > a, h3 > div > a,
     h4 > div > a, h5 > div > a, h6 > div > a { display: none !important; visibility: hidden !important; }
-
-    /* Optional: Hide the default sidebar if it appears empty */
-    /* section[data-testid="stSidebar"][aria-expanded="false"] { display: none; } */
-
 
     /* 2. تطبيق الخط العربي وتنسيقات RTL */
     * { font-family: 'Tajawal', sans-serif !important; }
@@ -57,8 +58,6 @@ general_css = """
         h1 { font-size: 1.3rem; margin-bottom: 15px; padding-bottom: 10px; }
         h2 { font-size: 1.1rem; margin-top: 15px; margin-bottom: 10px; }
         h3 { font-size: 1rem; margin-top: 12px; margin-bottom: 8px; }
-        /* Adjust expander width/position if needed on mobile */
-        /* div[data-testid="stExpander"] { ... } */
     }
 
     /* 6. تعديلات للأجهزة اللوحية (للتباعد العام والعناوين) */
@@ -92,29 +91,42 @@ general_css = """
 st.markdown(general_css, unsafe_allow_html=True)
 
 
-# --- القائمة باستخدام Expander في الأعلى ---
-# استخدام الأعمدة لوضع القائمة في اليمين والعنوان في اليسار (في RTL)
-col_menu, col_title_main = st.columns([0.3, 0.7]) # Adjust ratio as needed
+# --- زر التحكم بالشريط الجانبي ---
+# استخدام الأعمدة لوضعه في اليمين
+col_button, col_title_main = st.columns([0.15, 0.85]) # Adjust ratio as needed
 
-with col_menu:
-    with st.expander("☰", expanded=False):
-        # Add navigation links using Markdown
-        # Ensure these paths are correct for your multi-page app structure
-        st.markdown("""
-        - [🏠 الرئيسية](/)
-        - [👥 هيئة التدريس](/هيئة_التدريس)
-        - [📊 التقييمات والاستطلاعات](/التقييمات_والاستطلاعات)
-        - [🎯 لوحة إنجاز المهام](/لوحة_إنجاز_المهام)
-        - [📄 صفحة أخرى](/صفحة_اخرى)
-        """, unsafe_allow_html=True) # Use unsafe_allow_html if needed
+with col_button:
+    if st.button("☰", key="sidebar_toggle_button", help="فتح/إغلاق القائمة"):
+        # Toggle the state
+        current_state = st.session_state.sidebar_state
+        if current_state == 'collapsed':
+            st.session_state.sidebar_state = 'expanded'
+        else:
+            st.session_state.sidebar_state = 'collapsed'
+        # Rerun the app to apply the new initial_sidebar_state
+        st.rerun() # Use st.rerun() instead of experimental_rerun()
+
+# --- محتوى الشريط الجانبي ---
+# يتم عرض هذا المحتوى دائمًا، ولكن st.set_page_config يتحكم في ظهور/إخفاء الشريط الجانبي نفسه
+with st.sidebar:
+    st.markdown("### القائمة الرئيسية")
+    st.markdown("""
+    - [🏠 الرئيسية](/)
+    - [👥 هيئة التدريس](/هيئة_التدريس)
+    - [📊 التقييمات والاستطلاعات](/التقييمات_والاستطلاعات)
+    - [🎯 لوحة إنجاز المهام](/لوحة_إنجاز_المهام)
+    - [📄 صفحة أخرى](/صفحة_اخرى)
+    """, unsafe_allow_html=True)
+    st.markdown("---")
+
 
 # --- العنوان الرئيسي (الآن في العمود الثاني) ---
 with col_title_main:
-    
-    # st.markdown("### كلية القرآن الكريم والدراسات الإسلامية") # Subtitle can be moved below if needed
+    st.title("🏠 الرئيسية")
 
 
 # --- بقية محتوى الصفحة ---
+st.markdown("### كلية القرآن الكريم والدراسات الإسلامية") # Subtitle
 
 # دوال مساعدة (تبقى كما هي)
 def is_mobile():
@@ -164,7 +176,7 @@ def load_top_faculty():
     top_faculty = [ {"الاسم": "د. عائشة سعد", "اللقب": "العضو القمة", "الشارة": "👑", "النقاط": 320, "البرنامج": "دكتوراه علوم القرآن"}, {"الاسم": "د. محمد أحمد", "اللقب": "العضو المميز", "الشارة": "🌟", "النقاط": 280, "البرنامج": "بكالوريوس في القرآن وعلومه"}, {"الاسم": "د. عبدالله محمد", "اللقب": "العضو الفعال", "الشارة": "🔥", "النقاط": 210, "البرنامج": "بكالوريوس القراءات"} ]
     return pd.DataFrame(top_faculty)
 
-# تحميل البيانات (تبقى كما هي)
+# تحميل وعرض البيانات (تبقى كما هي)
 mobile_view = is_mobile()
 try:
     dept_data = load_department_summary(); total_students = dept_data["عدد الطلاب"].sum() if "عدد الطلاب" in dept_data.columns else 0; total_faculty = dept_data["أعضاء هيئة التدريس"].sum() if "أعضاء هيئة التدريس" in dept_data.columns else 0
@@ -180,19 +192,15 @@ except Exception as e:
     latest_year_data = pd.DataFrame({ "العام": [2024], "البرنامج": ["برنامج تجريبي"], "عدد الطلاب": [1000], "نسبة النجاح": [85], "معدل الرضا": [90] })
     yearly_data = latest_year_data.copy(); faculty_achievements = pd.DataFrame(); top_faculty = pd.DataFrame()
 
-# عرض العنوان الفرعي والعناصر الأخرى
-st.markdown("### كلية القرآن الكريم والدراسات الإسلامية") # Moved subtitle here
-
-# عرض المقاييس (تبقى كما هي)
+# عرض المقاييس والرسوم البيانية ... الخ (تبقى كما هي)
 st.subheader("المؤشرات الرئيسية")
-cols_metrics = st.columns(4) # Use a different variable name
+cols_metrics = st.columns(4)
 with cols_metrics[0]: st.metric("إجمالي الطلاب", f"{total_students:,}")
 with cols_metrics[1]: st.metric("أعضاء هيئة التدريس", f"{total_faculty:,}")
 indicators_to_plot = []
 if not latest_year_data.empty and "نسبة النجاح" in latest_year_data.columns: avg_success = latest_year_data["نسبة النجاح"].mean(); indicators_to_plot.append("نسبة النجاح"); cols_metrics[2].metric("متوسط النجاح", f"{avg_success:.0f}%")
 if not latest_year_data.empty and "معدل الرضا" in latest_year_data.columns: avg_satisfaction = latest_year_data["معدل الرضا"].mean(); indicators_to_plot.append("معدل الرضا"); cols_metrics[3].metric("متوسط الرضا", f"{avg_satisfaction:.0f}%")
 
-# عرض الرسوم البيانية داخل التبويبات (تبقى كما هي)
 if not latest_year_data.empty and "البرنامج" in latest_year_data.columns and "عدد الطلاب" in latest_year_data.columns:
     st.subheader("تحليل البرامج الأكاديمية")
     program_mapping = { "بكالوريوس في القرآن وعلومه": "ب. قرآن", "بكالوريوس القراءات": "ب. قراءات", "ماجستير الدراسات القرآنية المعاصرة": "م. دراسات", "ماجستير القراءات": "م. قراءات", "دكتوراه علوم القرآن": "د. قرآن", "دكتوراه القراءات": "د. قراءات" }
@@ -201,7 +209,7 @@ if not latest_year_data.empty and "البرنامج" in latest_year_data.columns
     else: display_data["البرنامج_المختصر"] = display_data["البرنامج"]
     tab_labels = ["توزيع الطلاب", "مقارنة المؤشرات", "التطور السنوي"]; tabs = st.tabs(tab_labels)
     with tabs[0]:
-        col1_tab1, col2_tab1 = st.columns([1, 1]) # Use unique names for columns in tabs
+        col1_tab1, col2_tab1 = st.columns([1, 1])
         with col1_tab1: fig_pie = px.pie(display_data, values="عدد الطلاب", names="البرنامج_المختصر", title="توزيع الطلاب", color_discrete_sequence=px.colors.qualitative.Pastel); fig_pie = prepare_chart_layout(fig_pie, "توزيع الطلاب", is_mobile=mobile_view, chart_type="pie"); st.plotly_chart(fig_pie, use_container_width=True, config={"displayModeBar": False})
         with col2_tab1: fig_bar = px.bar(display_data.sort_values("عدد الطلاب", ascending=True), y="البرنامج_المختصر", x="عدد الطلاب", title="عدد الطلاب لكل برنامج", color="عدد الطلاب", orientation='h', color_continuous_scale="Blues"); fig_bar = prepare_chart_layout(fig_bar, "عدد الطلاب لكل برنامج", is_mobile=mobile_view, chart_type="bar"); st.plotly_chart(fig_bar, use_container_width=True, config={"displayModeBar": False})
     with tabs[1]:
@@ -221,12 +229,12 @@ if not latest_year_data.empty and "البرنامج" in latest_year_data.columns
         else: st.info("لا توجد بيانات سنوية لعرض التطور.")
 else: st.info("لا توجد بيانات كافية لعرض الرسوم البيانية للبرامج.")
 
-# عرض معلومات هيئة التدريس (تبقى كما هي)
 st.subheader("أعضاء هيئة التدريس والإنجازات")
 if not top_faculty.empty or not faculty_achievements.empty:
-    col1_faculty, col2_faculty = st.columns([1, 1]) # Use unique names
+    col1_faculty, col2_faculty = st.columns([1, 1])
     with col1_faculty:
         st.markdown("#### 🏆 المميزون")
+        # ... (faculty display code remains the same) ...
         if not top_faculty.empty:
             num_to_display = min(len(top_faculty), 3)
             for _, member in top_faculty.head(num_to_display).iterrows(): name = member.get('الاسم', 'غير متوفر'); badge = member.get('الشارة', ''); title = member.get('اللقب', ''); points = member.get('النقاط', ''); st.markdown(f"""<div class='faculty-card'><h5 style="margin-bottom: 5px;">{badge} {name}</h5><p style="font-size: 0.9em; margin: 2px 0;">{title} ({points} نقطة)</p></div>""", unsafe_allow_html=True)
@@ -234,6 +242,7 @@ if not top_faculty.empty or not faculty_achievements.empty:
         else: st.info("لا توجد بيانات لأعضاء هيئة التدريس المميزين.")
     with col2_faculty:
         st.markdown("#### 🌟 أحدث الإنجازات")
+        # ... (achievements display code remains the same) ...
         if not faculty_achievements.empty:
             num_to_display = min(len(faculty_achievements), 3)
             if 'التاريخ' in faculty_achievements.columns: faculty_achievements['التاريخ'] = pd.to_datetime(faculty_achievements['التاريخ'], errors='coerce'); achievements_to_display = faculty_achievements.sort_values('التاريخ', ascending=False).head(num_to_display)
@@ -255,12 +264,12 @@ if not latest_year_data.empty and "البرنامج_المختصر" in display_d
     except Exception as heatmap_error: st.warning(f"لم يتمكن من إنشاء المخطط الحراري: {heatmap_error}")
 elif not latest_year_data.empty: st.info("لا تتوفر بيانات مؤشرات كافية لإنشاء المخطط الحراري.")
 
-# عرض نصائح الاستخدام (تم التحديث ليعكس استخدام Expander)
+# عرض نصائح الاستخدام (تم التحديث ليعكس استخدام الشريط الجانبي)
 with st.expander("💡 نصائح للاستخدام", expanded=False):
     st.markdown("""
-    - **تم استبدال زر البرجر بقائمة قابلة للطي (☰ القائمة) في أعلى يمين الصفحة.** انقر عليها لإظهار/إخفاء روابط التنقل.
-    - **تم إخفاء السهم الإضافي في الزاوية العلوية اليسرى.**
-    - استخدم الروابط في القائمة القابلة للطي للتنقل بين الصفحات.
+    - **تمت إزالة القائمة المخصصة واستبدالها بزر (☰) في أعلى يمين الصفحة يتحكم بظهور الشريط الجانبي القياسي.**
+    - انقر على زر ☰ لإظهار/إخفاء قائمة التنقل في الشريط الجانبي. الشريط الجانبي سيدفع المحتوى الرئيسي جانبًا عند ظهوره.
+    - استخدم الروابط في الشريط الجانبي للتنقل بين الصفحات.
     - الرسوم البيانية تفاعلية، مرر الفأرة فوقها لرؤية التفاصيل.
     - **مفاتيح الرسوم البيانية تظهر الآن أسفلها لتوفير المساحة.**
     - انقر على زر السهم ↑ في الأسفل للعودة إلى أعلى الصفحة بسرعة.
