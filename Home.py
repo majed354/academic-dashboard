@@ -131,27 +131,47 @@ st.markdown("""
     /* للهواتف المحمولة: نحتاج تبسيط العرض */
     @media only screen and (max-width: 768px) {
         /* تعديل الشريط الجانبي على الشاشات الصغيرة */
-        [data-testid="stSidebar"] {
-            width: 14rem !important;
-            min-width: 14rem !important;
-            max-width: 14rem !important;
+        section[data-testid="stSidebar"] {
+            width: 18rem !important;
+            min-width: 18rem !important;
+            max-width: 18rem !important;
             position: fixed !important;
-            transform: translateX(-100%);
-            transition: transform 300ms;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            transform: translateX(100%);
+            transition: transform 300ms ease;
             z-index: 1000;
+            box-shadow: -4px 0 15px rgba(0,0,0,0.2);
         }
         
-        [data-testid="stSidebar"]:hover,
-        [data-testid="stSidebar"]:focus,
-        [data-testid="stSidebar"]:active {
-            transform: translateX(0);
+        section[data-testid="stSidebar"].show-sidebar {
+            transform: translateX(0) !important;
         }
         
-        /* إضافة زر لإظهار الشريط الجانبي */
+        /* تعديل حاوية المحتوى الرئيسي */
+        .main .block-container {
+            padding-right: 1rem !important;
+            padding-left: 1rem !important;
+        }
+        
+        /* إضافة طبقة لإظلام الخلفية عند فتح الشريط الجانبي */
+        #sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+        
+        /* تنسيق زر القائمة */
         .sidebar-trigger {
             position: fixed;
-            top: 0.5rem;
-            right: 0.5rem;
+            top: 0.8rem;
+            right: 0.8rem;
             width: 35px;
             height: 35px;
             background-color: #1e88e5;
@@ -160,11 +180,11 @@ st.markdown("""
             display: flex;
             align-items: center;
             justify-content: center;
-            z-index: 999;
+            z-index: 998;
             cursor: pointer;
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
-    
+        
         /* جعل التبويبات تتجاوب بشكل أفضل */
         .stTabs [data-baseweb="tab-list"] {
             flex-wrap: wrap;
@@ -205,13 +225,6 @@ st.markdown("""
             font-size: 1rem;
             margin-top: 12px;
             margin-bottom: 8px;
-        }
-        
-        /* تقليل الهوامش الداخلية للحاوية الرئيسية */
-        .block-container {
-            padding-left: 1rem !important;
-            padding-right: 1rem !important;
-            max-width: 100% !important;
         }
         
         /* تعديلات للمخططات */
@@ -273,10 +286,45 @@ st.markdown("""
     }
 </style>
 
-<!-- إضافة زر للشريط الجانبي على الأجهزة المحمولة -->
-<div class="sidebar-trigger" onclick="document.querySelector('[data-testid=\\'stSidebar\\']').style.transform = 'translateX(0)'">
+<!-- إضافة طبقة لإظلام الخلفية عند فتح الشريط الجانبي -->
+<div id="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+<!-- إضافة زر جديد للشريط الجانبي على الأجهزة المحمولة -->
+<div class="sidebar-trigger" onclick="toggleSidebar()">
     <span style="font-size: 1.2rem;">☰</span>
 </div>
+
+<script>
+    // وظيفة لفتح وإغلاق الشريط الجانبي
+    function toggleSidebar() {
+        const sidebar = document.querySelector('section[data-testid="stSidebar"]');
+        const overlay = document.getElementById('sidebar-overlay');
+        
+        if (sidebar.classList.contains('show-sidebar')) {
+            // إغلاق الشريط الجانبي
+            sidebar.classList.remove('show-sidebar');
+            overlay.style.display = 'none';
+        } else {
+            // فتح الشريط الجانبي
+            sidebar.classList.add('show-sidebar');
+            overlay.style.display = 'block';
+        }
+    }
+    
+    // انتظر تحميل الصفحة بالكامل ثم قم بتهيئة الشريط الجانبي
+    window.addEventListener('DOMContentLoaded', (event) => {
+        // تهيئة الشريط الجانبي للأجهزة المحمولة
+        const sidebar = document.querySelector('section[data-testid="stSidebar"]');
+        if (sidebar && window.innerWidth <= 768) {
+            // تعيين حدث النقر لإغلاق الشريط الجانبي عند النقر على أي رابط داخله
+            sidebar.querySelectorAll('a').forEach(link => {
+                link.addEventListener('click', function() {
+                    setTimeout(() => toggleSidebar(), 300);
+                });
+            });
+        }
+    });
+</script>
 """, unsafe_allow_html=True)
 
 # دالة مساعدة للتكيف مع الأجهزة المحمولة
