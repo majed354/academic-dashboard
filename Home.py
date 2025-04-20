@@ -7,7 +7,13 @@ import plotly.graph_objects as go
 from datetime import datetime
 import hashlib # Added for dummy data generation
 
-
+# --- إعدادات الصفحة ---
+st.set_page_config(
+    page_title="الرئيسية",
+    page_icon="🏠",
+    layout="wide",
+    # initial_sidebar_state is not needed anymore
+)
 
 # --- CSS عام (لإخفاء عناصر Streamlit وتطبيق الخطوط و RTL) ---
 # تم إزالة CSS الخاص بإخفاء أزرار تبديل الشريط الجانبي
@@ -91,7 +97,7 @@ st.markdown(general_css, unsafe_allow_html=True)
 col_menu, col_title_main = st.columns([0.3, 0.7]) # Adjust ratio as needed
 
 with col_menu:
-    with st.expander("☰ القائمة", expanded=False):
+    with st.expander("☰", expanded=False):
         # Add navigation links using Markdown
         # Ensure these paths are correct for your multi-page app structure
         st.markdown("""
@@ -104,7 +110,7 @@ with col_menu:
 
 # --- العنوان الرئيسي (الآن في العمود الثاني) ---
 with col_title_main:
-    st.title("🏠 الرئيسية") # Keep title simple
+    
     # st.markdown("### كلية القرآن الكريم والدراسات الإسلامية") # Subtitle can be moved below if needed
 
 
