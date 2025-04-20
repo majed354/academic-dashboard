@@ -11,7 +11,38 @@ st.set_page_config(
     page_icon="🏠",
     layout="wide"
 )
-
+# كود لإخفاء عناصر واجهة المستخدم الافتراضية
+hide_elements = """
+<style>
+    /* إخفاء قائمة الهامبرغر والشريط العلوي */
+    [data-testid="stToolbar"] {visibility: hidden !important;}
+    #MainMenu {visibility: hidden !important;}
+    
+    /* إخفاء الفوتر */
+    footer {visibility: hidden !important;}
+    
+    /* إخفاء أيقونة GitHub */
+    .viewerBadge_container__1QSob,
+    .styles_viewerBadge__1yB5_,
+    .viewerBadge_link__1S137,
+    .viewerBadge_text__1JaDK,
+    #GithubIcon {display: none !important;}
+    
+    /* إخفاء أيقونة "Created by" */
+    [data-testid="stThumbnailsChipContainer"] {display: none !important;}
+    
+    /* إخفاء المساحة البيضاء التي تبقى بعد إخفاء الشريط العلوي */
+    [data-testid="stAppViewBlockContainer"] > div:first-child {
+        padding-top: 1rem;
+    }
+    
+    /* إزالة روابط الترسيخ في العناوين */
+    h1 > div > a, h2 > div > a, h3 > div > a, h4 > div > a, h5 > div > a, h6 > div > a {
+        display: none !important;
+    }
+</style>
+"""
+st.markdown(hide_elements, unsafe_allow_html=True)
 # ضبط viewport للشاشات المتجاوبة
 st.markdown('<meta name="viewport" content="width=device-width, initial-scale=1">', unsafe_allow_html=True)
 
