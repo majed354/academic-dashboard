@@ -10,6 +10,7 @@ st.set_page_config(
     page_icon="📚",
     layout="wide"
 )
+# إخفاء العناصر الافتراضية في Streamlit
 hide_streamlit_elements = """
 <style>
   /* 1. أخفِ شريط الـheader والـmenu الافتراضي */
@@ -20,7 +21,7 @@ hide_streamlit_elements = """
   /* 2. أخفِ الفوتر */
   footer                  { visibility: hidden !important; }
 
-  /* 3. أخفِ أيقونة GitHub وبادج “Created by” */
+  /* 3. أخفِ أيقونة GitHub وبادج "Created by" */
   [class^="viewerBadge_"], [id^="GithubIcon"] {
     display: none !important;
   }
@@ -31,7 +32,7 @@ hide_streamlit_elements = """
   /* 4. أخفِ شريط التقدم */
   .stProgress             { display: none !important; }
 
-  /* 5. استثناء للشريط الجانبي: أبقه مرئيًّا */
+  /* 5. استثناء للشريط الجانبي: أبقه مرئيًّا */
   [data-testid="stSidebar"] {
     display: block !important;
   }
