@@ -11,63 +11,50 @@ st.set_page_config(
     page_icon="🏠",
     layout="wide"
 )
-# كود لإخفاء جميع عناصر واجهة Streamlit الافتراضية
 hide_streamlit_elements = """
 <style>
-    /* إخفاء قائمة الهامبرغر والشريط العلوي */
-    [data-testid="stToolbar"] {visibility: hidden !important;}
-    #MainMenu {visibility: hidden !important;}
-    header {visibility: hidden !important;}
-    
-    /* إخفاء الفوتر */
-    footer {visibility: hidden !important;}
-    
-    /* إخفاء أيقونة GitHub */
-    .viewerBadge_container__1QSob,
-    .styles_viewerBadge__1yB5_,
-    .viewerBadge_link__1S137,
-    .viewerBadge_text__1JaDK,
-    #GithubIcon {display: none !important;}
-    
-    /* إخفاء أيقونة "Created by" */
-    [data-testid="stThumbnailsChipContainer"] {display: none !important;}
-    
-    /* إخفاء المساحة البيضاء التي تبقى بعد إخفاء الشريط العلوي */
-    [data-testid="stAppViewBlockContainer"] > div:first-child {
-        padding-top: 1rem;
-    }
-    
-    /* إزالة روابط الترسيخ في العناوين */
-    h1 > div > a, h2 > div > a, h3 > div > a, h4 > div > a, h5 > div > a, h6 > div > a {
-        display: none !important;
-    }
-    
-    /* إخفاء شريط التنقل السفلي في الجوال */
-    [data-testid="stBottomNavBar"] {display: none !important;}
-    [data-testid="baseButton-bottomNav-community"] {display: none !important;}
-    [data-testid="baseButton-bottomNav-profile"] {display: none !important;}
-    .stBottomNavContainer {display: none !important;}
-    
-    /* محاولات إضافية لإخفاء أزرار التنقل السفلية */
-    [data-testid*="bottomNav"] {display: none !important;}
-    [aria-label*="community"] {display: none !important;}
-    [aria-label*="profile"] {display: none !important;}
-    [title*="community"] {display: none !important;}
-    [title*="profile"] {display: none !important;}
-    
-    /* محاولة شاملة لإخفاء عناصر التنقل السفلية */
-    nav:not(.st-emotion-cache-16txtl3) {display: none !important;}
-    [role="navigation"]:not(.st-emotion-cache-16txtl3) {display: none !important;}
-    
-    /* إخفاء عناصر Deploy و Community */
-    .st-emotion-cache-6qob1r {display: none !important;}
-    .st-emotion-cache-ue6h4q {display: none !important;}
-    .st-emotion-cache-1dp5vir {display: none !important;}
-    
-    /* إخفاء شريط التقدم الأحمر عند التحميل */
-    .stProgress {display: none !important;}
+  /* 1. أخفِ شريط الـheader والـmenu الافتراضي */
+  [data-testid="stToolbar"] { visibility: hidden !important; }
+  #MainMenu               { visibility: hidden !important; }
+  header                  { visibility: hidden !important; }
+
+  /* 2. أخفِ الفوتر */
+  footer                  { visibility: hidden !important; }
+
+  /* 3. أخفِ أيقونة GitHub وبادج “Created by” */
+  [class^="viewerBadge_"], [id^="GithubIcon"] {
+    display: none !important;
+  }
+  [data-testid="stThumbnailsChipContainer"] {
+    display: none !important;
+  }
+
+  /* 4. أخفِ شريط التقدم */
+  .stProgress             { display: none !important; }
+
+  /* 5. استثناء للشريط الجانبي: أبقه مرئيًّا */
+  [data-testid="stSidebar"] {
+    display: block !important;
+  }
+
+  /* 6. أخفِ عناصر التنقل السفلية فقط (بدون تعميم nav) */
+  [data-testid="stBottomNavBar"],
+  [data-testid*="bottomNav"],
+  [aria-label*="community"],
+  [aria-label*="profile"],
+  [title*="community"],
+  [title*="profile"] {
+    display: none !important;
+  }
+
+  /* 7. إزالة روابط الترسّخ في العناوين */
+  h1 > div > a, h2 > div > a, h3 > div > a,
+  h4 > div > a, h5 > div > a, h6 > div > a {
+    display: none !important;
+  }
 </style>
 """
+
 st.markdown(hide_streamlit_elements, unsafe_allow_html=True)
 # ضبط viewport للشاشات المتجاوبة
 st.markdown('<meta name="viewport" content="width=device-width, initial-scale=1">', unsafe_allow_html=True)
