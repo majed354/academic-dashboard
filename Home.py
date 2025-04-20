@@ -6,20 +6,20 @@ import plotly.graph_objects as go
 from datetime import datetime
 import hashlib
 
-# --- إعدادات الصفحة (بدون التحكم المسبق بحالة الشريط الجانبي) ---
+# --- إعدادات الصفحة ---
 st.set_page_config(
     page_title="الرئيسية",
     page_icon="🏠",
     layout="wide"
-    # initial_sidebar_state is removed - let Streamlit handle it
 )
 
-# --- CSS عام (لإخفاء عناصر Streamlit وتطبيق الخطوط و RTL) ---
-# تم إزالة CSS الخاص بإخفاء الشريط الجانبي أو أزرار تبديله
-general_css = """
+# --- CSS و HTML للقائمة العلوية المنسدلة ---
+# ملاحظة: تعتمد القائمة المنسدلة هنا على CSS :hover لإظهار القوائم الفرعية.
+# قد لا يكون هذا مثالياً لأجهزة اللمس. الحل الأكثر قوة يتطلب JavaScript أو مكون مخصص.
+top_menu_html_css = """
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700&display=swap" rel="stylesheet">
 <style>
-    /* 1. إخفاء عناصر Streamlit الافتراضية غير المرغوب فيها */
+    /* --- إخفاء عناصر Streamlit الافتراضية --- */
     [data-testid="stToolbar"], #MainMenu, header, footer,
     [class^="viewerBadge_"], [id^="GithubIcon"],
     [data-testid="stThumbnailsChipContainer"], .stProgress,
@@ -28,12 +28,90 @@ general_css = """
     [title*="community"], [title*="profile"],
     h1 > div > a, h2 > div > a, h3 > div > a,
     h4 > div > a, h5 > div > a, h6 > div > a { display: none !important; visibility: hidden !important; }
+    /* Hide default sidebar elements if they appear */
+    [data-testid="stSidebar"],
+    [data-testid="stSidebarNavToggler"],
+    [data-testid="stSidebarCollapseButton"] {
+         display: none !important;
+    }
 
-    /* 2. تطبيق الخط العربي وتنسيقات RTL */
+    /* --- تطبيق الخط العربي و RTL --- */
     * { font-family: 'Tajawal', sans-serif !important; }
     .stApp { direction: rtl; text-align: right; }
 
-    /* 3. تنسيقات عامة للعناوين والبطاقات والمقاييس */
+    /* --- تنسيق شريط التنقل العلوي --- */
+    .top-navbar {
+        background-color: #f8f9fa; /* Light background */
+        padding: 0.5rem 1rem;
+        border-bottom: 1px solid #e7e7e7;
+        margin-bottom: 2rem; /* Add space below navbar */
+        width: 100%;
+        box-sizing: border-box;
+    }
+    .top-navbar ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex; /* Arrange items horizontally */
+        justify-content: flex-start; /* Start items from the right in RTL */
+        align-items: center;
+    }
+    .top-navbar li {
+        position: relative; /* Needed for absolute positioning of dropdown */
+        margin-left: 1.5rem; /* Space between main items (adjust as needed) */
+    }
+    .top-navbar li:first-child {
+         margin-right: 0; /* No margin for the first item */
+    }
+    .top-navbar a {
+        text-decoration: none;
+        color: #333;
+        padding: 0.5rem 0.2rem; /* Padding for main links */
+        display: block;
+        font-weight: 500;
+    }
+    .top-navbar a:hover {
+        color: #1e88e5; /* Highlight color on hover */
+    }
+
+    /* --- تنسيق القائمة المنسدلة --- */
+    .top-navbar .dropdown-content {
+        display: none; /* Hidden by default */
+        position: absolute;
+        background-color: #ffffff;
+        min-width: 200px; /* Width of dropdown */
+        box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.1);
+        z-index: 100; /* Ensure dropdown is above other content */
+        border-radius: 4px;
+        padding: 0.5rem 0; /* Padding inside dropdown */
+        right: 0; /* Align dropdown to the right edge of parent li in RTL */
+        top: 100%; /* Position below the parent li */
+    }
+    .top-navbar .dropdown-content a {
+        color: black;
+        padding: 10px 15px; /* Padding for dropdown items */
+        text-decoration: none;
+        display: block;
+        white-space: nowrap;
+    }
+    .top-navbar .dropdown-content a:hover {
+        background-color: #f1f1f1;
+        color: #1e88e5;
+    }
+
+    /* --- إظهار القائمة المنسدلة عند المرور --- */
+    .top-navbar li:hover > .dropdown-content {
+        display: block;
+    }
+
+    /* --- إضافة سهم للعناصر التي تحتوي على قائمة منسدلة --- */
+    .top-navbar .has-dropdown > a::after {
+        content: ' ▼'; /* Down arrow */
+        font-size: 0.7em;
+        margin-right: 5px; /* Space before arrow in RTL */
+    }
+
+    /* --- تنسيقات عامة أخرى (تبقى كما هي) --- */
     h1 { color: #1e88e5; padding-bottom: 15px; border-bottom: 2px solid #1e88e5; margin-bottom: 30px; font-weight: 700; font-size: calc(1.2rem + 1vw); }
     h2, h3 { color: #1e88e5; margin-top: 30px; margin-bottom: 20px; font-weight: 600; font-size: calc(1rem + 0.5vw); }
     .metric-card { background-color: white; border-radius: 10px; padding: 15px; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1); text-align: center; margin-bottom: 15px; }
@@ -41,25 +119,30 @@ general_css = """
     .faculty-card { background: linear-gradient(135deg, #f5f7fa 0%, #e3e6f0 100%); border-radius: 10px; padding: 15px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); }
     .achievement-item { padding: 10px; border-right: 3px solid #1e88e5; margin-bottom: 10px; background-color: rgba(30, 136, 229, 0.05); }
     .stSelectbox label, .stMultiselect label { font-weight: 500; }
-
-     /* 4. زر العودة للأعلى */
-     .back-to-top { position: fixed; bottom: 20px; left: 20px; width: 40px; height: 40px; background-color: #1e88e5; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 998; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.2); opacity: 0; transition: opacity 0.3s, transform 0.3s; transform: scale(0); }
+    .back-to-top { position: fixed; bottom: 20px; left: 20px; width: 40px; height: 40px; background-color: #1e88e5; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 998; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.2); opacity: 0; transition: opacity 0.3s, transform 0.3s; transform: scale(0); }
     .back-to-top.visible { opacity: 1; transform: scale(1); }
-
-    /* 5. تعديلات للهواتف المحمولة (للتباعد العام والعناوين) */
-    @media only screen and (max-width: 768px) {
-        .main .block-container { padding-right: 1rem !important; padding-left: 1rem !important; }
-        h1 { font-size: 1.3rem; margin-bottom: 15px; padding-bottom: 10px; }
-        h2 { font-size: 1.1rem; margin-top: 15px; margin-bottom: 10px; }
-        h3 { font-size: 1rem; margin-top: 12px; margin-bottom: 8px; }
-    }
-
-    /* 6. تعديلات للأجهزة اللوحية (للتباعد العام والعناوين) */
-    @media only screen and (min-width: 769px) and (max-width: 1024px) {
-        h1 { font-size: 1.7rem; }
-        h2, h3 { font-size: 1.2rem; }
-    }
+    @media only screen and (max-width: 768px) { .main .block-container { padding-right: 1rem !important; padding-left: 1rem !important; } h1 { font-size: 1.3rem; } h2 { font-size: 1.1rem; } h3 { font-size: 1rem; } .top-navbar ul { flex-direction: column; align-items: flex-start;} .top-navbar li { margin-left: 0; width: 100%;} .top-navbar .dropdown-content {position: static; box-shadow: none; border: none;}} /* Basic mobile stacking */
+    @media only screen and (min-width: 769px) and (max-width: 1024px) { h1 { font-size: 1.7rem; } h2, h3 { font-size: 1.2rem; } }
 </style>
+
+<nav class="top-navbar">
+    <ul>
+        <li><a href="/">الرئيسية</a></li>
+        <li class="has-dropdown"> <a href="#">البرامج الأكاديمية</a> <div class="dropdown-content">
+                <a href="/program1">بكالوريوس قرآن وعلومه</a>
+                <a href="/program2">بكالوريوس القراءات</a>
+                <a href="/program3">ماجستير دراسات قرآنية</a>
+                <a href="/program4">ماجستير القراءات</a>
+                <a href="/program5">دكتوراه علوم قرآن</a>
+                <a href="/program6">دكتوراه القراءات</a>
+            </div>
+        </li>
+        <li><a href="/هيئة_التدريس">هيئة التدريس</a></li>
+        <li><a href="/إنجاز_المهام">إنجاز المهام</a></li>
+        <li><a href="/الاستطلاعات_والتقييمات">الاستطلاعات والتقييمات</a></li>
+        <li><a href="/لوحة_التحكم">لوحة التحكم</a></li>
+        </ul>
+</nav>
 
 <div class="back-to-top" onclick="scrollToTop()">
     <span style="font-size: 1.2rem;">↑</span>
@@ -79,34 +162,17 @@ general_css = """
              }
         });
     } catch(e){ console.error("Error adding scroll listener:", e); }
+    // No JavaScript needed for hover-based dropdowns
 </script>
 """
-# تطبيق CSS العام وزر العودة للأعلى
-st.markdown(general_css, unsafe_allow_html=True)
+# تطبيق القائمة العلوية و CSS العام وزر العودة للأعلى
+st.markdown(top_menu_html_css, unsafe_allow_html=True)
 
 
-# --- محتوى الشريط الجانبي الافتراضي ---
-# سيظهر هذا المحتوى في الشريط الجانبي القياسي لـ Streamlit
-# إذا كان لديك مجلد 'pages'، سيتم إضافة روابطه تلقائيًا هنا أيضًا.
-with st.sidebar:
-    st.markdown("### القائمة الرئيسية")
-    # يمكنك استخدام st.page_link للتنقل المضمون في تطبيقات متعددة الصفحات
-    # st.page_link("streamlit_app.py", label="🏠 الرئيسية", icon="🏠")
-    # st.page_link("pages/faculty.py", label="👥 هيئة التدريس", icon="👥")
-    # ... أو استخدام روابط Markdown إذا كانت المسارات ثابتة ومعروفة
-    st.markdown("""
-    - [🏠 الرئيسية](/)
-    - [👥 هيئة التدريس](/هيئة_التدريس)
-    - [📊 التقييمات والاستطلاعات](/التقييمات_والاستطلاعات)
-    - [🎯 لوحة إنجاز المهام](/لوحة_إنجاز_المهام)
-    - [📄 صفحة أخرى](/صفحة_اخرى)
-    """, unsafe_allow_html=True)
-    st.markdown("---")
-    # يمكنك إضافة عناصر أخرى هنا مثل الفلاتر أو معلومات إضافية
-    st.success("اختر صفحة من القائمة أعلاه.")
+# --- إزالة الشريط الجانبي السابق ---
+# The 'with st.sidebar:' block is removed.
 
-
-# --- العنوان الرئيسي (الآن يأخذ العرض الكامل) ---
+# --- العنوان الرئيسي (يظهر الآن تحت القائمة العلوية) ---
 st.title("🏠 الرئيسية")
 
 
@@ -249,14 +315,13 @@ if not latest_year_data.empty and "البرنامج_المختصر" in display_d
     except Exception as heatmap_error: st.warning(f"لم يتمكن من إنشاء المخطط الحراري: {heatmap_error}")
 elif not latest_year_data.empty: st.info("لا تتوفر بيانات مؤشرات كافية لإنشاء المخطط الحراري.")
 
-# عرض نصائح الاستخدام (تم التحديث ليعكس استخدام الشريط الجانبي الافتراضي)
+# عرض نصائح الاستخدام (تم التحديث ليعكس استخدام القائمة العلوية)
 with st.expander("💡 نصائح للاستخدام", expanded=False):
     st.markdown("""
-    - **تمت إزالة زر التحكم بالشريط الجانبي والعودة إلى الشريط الجانبي الافتراضي لـ Streamlit.**
-    - يظهر الشريط الجانبي تلقائيًا (أو يمكن إظهاره/إخفاؤه باستخدام السهم الافتراضي في الأعلى إذا كان مرئيًا).
-    - استخدم الروابط في الشريط الجانبي للتنقل بين الصفحات (إذا كان تطبيقك متعدد الصفحات).
+    - **تمت إضافة شريط تنقل علوي مع قائمة منسدلة للبرامج الأكاديمية.**
+    - مرر الفأرة فوق "البرامج الأكاديمية" لإظهار القائمة المنسدلة (قد لا تعمل جيداً على اللمس).
+    - استخدم الروابط في الشريط العلوي أو القائمة المنسدلة للتنقل.
     - الرسوم البيانية تفاعلية، مرر الفأرة فوقها لرؤية التفاصيل.
     - **مفاتيح الرسوم البيانية تظهر الآن أسفلها لتوفير المساحة.**
     - انقر على زر السهم ↑ في الأسفل للعودة إلى أعلى الصفحة بسرعة.
     """)
-
