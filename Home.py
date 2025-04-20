@@ -16,11 +16,10 @@ st.set_page_config(
 )
 
 # --- CSS لإخفاء عناصر Streamlit وإضافة قائمة البرجر المنسدلة ---
-# CSS remains the same as the previous version
 custom_css = """
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700&display=swap" rel="stylesheet">
 <style>
-    /* 1. إخفاء عناصر Streamlit الافتراضية (بما في ذلك الشريط الجانبي) */
+    /* 1. إخفاء عناصر Streamlit الافتراضية (بما في ذلك الشريط الجانبي وزر التبديل الخاص به) */
     [data-testid="stToolbar"],
     #MainMenu,
     header,
@@ -43,6 +42,12 @@ custom_css = """
     [data-testid="stSidebar"] {
         display: none !important;
     }
+    /* --- إخفاء زر تبديل الشريط الجانبي الإضافي --- */
+    [data-testid="stSidebarNavToggler"],
+    [data-testid="stSidebarCollapseButton"] {
+         display: none !important;
+    }
+
 
     /* 2. تطبيق الخط العربي وتنسيقات RTL */
     * {
@@ -107,16 +112,121 @@ custom_css = """
 </div>
 
 <script>
-    // JavaScript remains the same as the previous version
-    const menu = document.getElementById('burger-menu');
-    const trigger = document.querySelector('.burger-trigger');
-    function toggleBurgerMenu(event) { event.stopPropagation(); menu.classList.toggle('show-menu'); }
-    function closeMenu() { if (menu.classList.contains('show-menu')) { menu.classList.remove('show-menu'); } }
-    document.querySelectorAll('#burger-menu a').forEach(link => { link.addEventListener('click', closeMenu); });
-    document.addEventListener('click', function(event) { if (!menu.contains(event.target) && !trigger.contains(event.target)) { closeMenu(); } });
-    function scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); }
-    window.addEventListener('scroll', function() { const backToTopButton = document.querySelector('.back-to-top'); if (window.scrollY > 300) { backToTopButton.classList.add('visible'); } else { backToTopButton.classList.remove('visible'); } });
-    document.addEventListener('DOMContentLoaded', () => { try { const currentPath = window.location.pathname; document.querySelectorAll('#burger-menu a').forEach(link => { link.classList.remove('active-link'); const linkPath = link.getAttribute('href'); if (!linkPath) return; if (currentPath === linkPath || (currentPath.endsWith('/') && currentPath.slice(0,-1) === linkPath) || (linkPath.endsWith('/') && linkPath.slice(0,-1) === currentPath) || (currentPath === '/' && linkPath === '/')) { link.classList.add('active-link'); } }); } catch (e) { console.error("Error setting active link:", e); } });
+    // Wrap main logic in a function to ensure elements exist
+    function initializeBurgerMenu() {
+        const menu = document.getElementById('burger-menu');
+        const trigger = document.querySelector('.burger-trigger');
+
+        // Check if elements exist before adding listeners
+        if (!menu || !trigger) {
+            console.warn("Burger menu elements not found yet.");
+            // Optionally, retry after a short delay
+            // setTimeout(initializeBurgerMenu, 100);
+            return;
+        }
+
+        // Function to toggle the menu
+        window.toggleBurgerMenu = function(event) {
+            try {
+                 event.stopPropagation(); // Prevent click from reaching document listener immediately
+                 menu.classList.toggle('show-menu');
+            } catch (e) {
+                 console.error("Error toggling burger menu:", e);
+            }
+        }
+
+        // Function to close the menu
+        window.closeMenu = function() {
+            try {
+                 if (menu.classList.contains('show-menu')) {
+                    menu.classList.remove('show-menu');
+                 }
+            } catch (e) {
+                 console.error("Error closing burger menu:", e);
+            }
+        }
+
+        // Close menu when clicking a link inside it
+        try {
+            menu.querySelectorAll('a.menu-link').forEach(link => {
+                 link.addEventListener('click', window.closeMenu);
+            });
+        } catch (e) {
+            console.error("Error adding link listeners:", e);
+        }
+
+
+        // Close menu when clicking outside
+        try {
+            document.addEventListener('click', function(event) {
+                 // Check if the menu exists and is shown before trying to close
+                 const currentMenu = document.getElementById('burger-menu'); // Re-fetch in case of re-render
+                 const currentTrigger = document.querySelector('.burger-trigger'); // Re-fetch
+                 if (currentMenu && currentTrigger && currentMenu.classList.contains('show-menu')) {
+                    if (!currentMenu.contains(event.target) && !currentTrigger.contains(event.target)) {
+                         window.closeMenu();
+                    }
+                 }
+            });
+        } catch (e) {
+            console.error("Error adding document click listener:", e);
+        }
+
+
+        // --- Active Link Logic ---
+        try {
+            const currentPath = window.location.pathname;
+            menu.querySelectorAll('a.menu-link').forEach(link => {
+                 link.classList.remove('active-link');
+                 const linkPath = link.getAttribute('href');
+                 if (!linkPath) return;
+                 if (currentPath === linkPath ||
+                    (currentPath.endsWith('/') && currentPath.slice(0,-1) === linkPath) ||
+                    (linkPath.endsWith('/') && linkPath.slice(0,-1) === currentPath) ||
+                    (currentPath === '/' && linkPath === '/'))
+                 {
+                    link.classList.add('active-link');
+                 }
+            });
+        } catch (e) {
+            console.error("Error setting active link:", e);
+        }
+    }
+
+    // --- Scroll to Top Logic ---
+    window.scrollToTop = function() {
+        try {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        } catch(e){
+            console.error("Error scrolling to top:", e);
+        }
+    }
+    try {
+        window.addEventListener('scroll', function() {
+             const backToTopButton = document.querySelector('.back-to-top');
+             if(backToTopButton){ // Check if button exists
+                 if (window.scrollY > 300) {
+                    backToTopButton.classList.add('visible');
+                 } else {
+                    backToTopButton.classList.remove('visible');
+                 }
+             }
+        });
+    } catch(e){
+        console.error("Error adding scroll listener:", e);
+    }
+
+
+    // Try initializing after DOM is loaded, and again after a short delay as fallback
+    if (document.readyState === "loading") {
+        document.addEventListener('DOMContentLoaded', initializeBurgerMenu);
+    } else {
+        // DOMContentLoaded already fired
+        initializeBurgerMenu();
+    }
+    // Fallback initialization in case Streamlit timing is tricky
+    // setTimeout(initializeBurgerMenu, 500); // Removed this for now, rely on DOMContentLoaded or immediate execution
+
 </script>
 """
 
@@ -134,77 +244,69 @@ def is_mobile():
 # --- *** تعديل دالة prepare_chart_layout *** ---
 def prepare_chart_layout(fig, title, is_mobile=False, chart_type="bar"):
     """Apply uniform settings to charts and make them responsive, with legend at the bottom."""
-    fig.update_layout(dragmode=False)
-    fig.update_xaxes(fixedrange=True)
-    fig.update_yaxes(fixedrange=True)
+    try: # Add try-except block for robustness
+        fig.update_layout(dragmode=False)
+        fig.update_xaxes(fixedrange=True)
+        fig.update_yaxes(fixedrange=True)
 
-    # Common layout settings
-    layout_settings = {
-        "title": title,
-        "font": {"family": "Tajawal"},
-        "plot_bgcolor": "rgba(240, 240, 240, 0.8)",
-        "paper_bgcolor": "white",
-        # --- Universal Legend Settings ---
-        "legend": {
-            "orientation": "h",      # Horizontal orientation
-            "yanchor": "bottom",     # Anchor legend to the bottom
-            "xanchor": "center",     # Center legend horizontally
-            "x": 0.5,                # Position at horizontal center
-            # y position and font size will be adjusted based on mobile/desktop
+        # Common layout settings
+        layout_settings = {
+            "title": title,
+            "font": {"family": "Tajawal"},
+            "plot_bgcolor": "rgba(240, 240, 240, 0.8)",
+            "paper_bgcolor": "white",
+            # --- Universal Legend Settings (Positioned at Bottom) ---
+            "legend": {
+                "orientation": "h",      # Horizontal orientation
+                "yanchor": "bottom",     # Anchor legend to the bottom
+                "xanchor": "center",     # Center legend horizontally
+                "x": 0.5,                # Position at horizontal center
+                # y position and font size will be adjusted based on mobile/desktop
+            }
+            # Ensure showlegend is True by default if legend items exist, Plotly usually handles this.
+            # We only explicitly set showlegend=False for mobile pie charts below.
         }
-    }
 
-    # Settings specific to device type
-    if is_mobile:
-        # Mobile specific settings
-        mobile_settings = {
-            "height": 300 if chart_type != "heatmap" else 350,
-            # Increase bottom margin slightly to accommodate legend
-            "margin": {"t": 40, "b": 90, "l": 10, "r": 10, "pad": 0},
-            "font": {"size": 10},
-            "title": {"font": {"size": 13}},
-            # Adjust legend position and font for mobile
-            "legend": {"y": -0.35, "font": {"size": 9}} # Further down, smaller font
-        }
-        layout_settings.update(mobile_settings) # Update common settings with mobile specifics
+        # Settings specific to device type
+        if is_mobile:
+            # Mobile specific settings
+            mobile_settings = {
+                "height": 300 if chart_type != "heatmap" else 350,
+                # Increase bottom margin MORE to ensure legend fits
+                "margin": {"t": 40, "b": 100, "l": 10, "r": 10, "pad": 0}, # Increased bottom margin
+                "font": {"size": 10},
+                "title": {"font": {"size": 13}},
+                # Adjust legend position and font for mobile
+                "legend": {"y": -0.4, "font": {"size": 9}} # Further down (-0.4), smaller font
+            }
+            layout_settings.update(mobile_settings) # Update common settings with mobile specifics
 
-        # Specific chart type adjustments for mobile
-        if chart_type == "bar":
-            fig.update_traces(textfont_size=8)
-            # Keep x-axis labels horizontal if possible, otherwise rotate slightly
-            fig.update_xaxes(tickangle=0, tickfont={"size": 8}) # Try 0 angle first
-        elif chart_type == "pie":
-             fig.update_traces(textfont_size=9, textposition="inside", textinfo="percent")
-             layout_settings["showlegend"] = False # Keep legend hidden for pie on mobile
-        elif chart_type == "line":
-             # Reduce marker size slightly for mobile line charts
-             fig.update_traces(marker=dict(size=5))
+            # Specific chart type adjustments for mobile
+            if chart_type == "bar":
+                fig.update_traces(textfont_size=8)
+                fig.update_xaxes(tickangle=0, tickfont={"size": 8}) # Try 0 angle first
+            elif chart_type == "pie":
+                 fig.update_traces(textfont_size=9, textposition="inside", textinfo="percent")
+                 layout_settings["showlegend"] = False # Keep legend hidden for pie on mobile
+            elif chart_type == "line":
+                 fig.update_traces(marker=dict(size=5))
 
 
-    else: # Desktop settings
-        desktop_settings = {
-            "height": 450 if chart_type != "heatmap" else 400,
-            # Increase bottom margin slightly for desktop legend
-            "margin": {"t": 50, "b": 80, "l": 30, "r": 30, "pad": 4},
-             # Adjust legend position and font for desktop
-            "legend": {"y": -0.2, "font": {"size": 10}} # Closer to chart, default font size
-        }
-        layout_settings.update(desktop_settings) # Update common settings with desktop specifics
-        # No specific chart type adjustments needed for desktop currently
+        else: # Desktop settings
+            desktop_settings = {
+                "height": 450 if chart_type != "heatmap" else 400,
+                # Increase bottom margin slightly for desktop legend
+                "margin": {"t": 50, "b": 90, "l": 30, "r": 30, "pad": 4}, # Increased bottom margin
+                 # Adjust legend position and font for desktop
+                "legend": {"y": -0.25, "font": {"size": 10}} # Slightly further down (-0.25), default font size
+            }
+            layout_settings.update(desktop_settings) # Update common settings with desktop specifics
 
-    # Apply the final combined layout settings
-    fig.update_layout(**layout_settings)
+        # Apply the final combined layout settings
+        fig.update_layout(**layout_settings)
 
-    # --- Special handling for heatmap color bar (if needed) ---
-    # if chart_type == "heatmap":
-    #     fig.update_layout(coloraxis_colorbar=dict(
-    #         orientation="h",
-    #         yanchor="bottom",
-    #         y=-0.25, # Adjust position if needed
-    #         xanchor="center",
-    #         x=0.5,
-    #         len=0.8 # Adjust length
-    #     ))
+    except Exception as e:
+        st.warning(f"Could not apply layout settings for chart '{title}': {e}")
 
 
     return fig
