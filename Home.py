@@ -11,12 +11,13 @@ st.set_page_config(
     page_icon="🏠",
     layout="wide"
 )
-# كود لإخفاء عناصر واجهة المستخدم الافتراضية
-hide_elements = """
+# كود لإخفاء جميع عناصر واجهة Streamlit الافتراضية
+hide_streamlit_elements = """
 <style>
     /* إخفاء قائمة الهامبرغر والشريط العلوي */
     [data-testid="stToolbar"] {visibility: hidden !important;}
     #MainMenu {visibility: hidden !important;}
+    header {visibility: hidden !important;}
     
     /* إخفاء الفوتر */
     footer {visibility: hidden !important;}
@@ -40,6 +41,31 @@ hide_elements = """
     h1 > div > a, h2 > div > a, h3 > div > a, h4 > div > a, h5 > div > a, h6 > div > a {
         display: none !important;
     }
+    
+    /* إخفاء شريط التنقل السفلي في الجوال */
+    [data-testid="stBottomNavBar"] {display: none !important;}
+    [data-testid="baseButton-bottomNav-community"] {display: none !important;}
+    [data-testid="baseButton-bottomNav-profile"] {display: none !important;}
+    .stBottomNavContainer {display: none !important;}
+    
+    /* محاولات إضافية لإخفاء أزرار التنقل السفلية */
+    [data-testid*="bottomNav"] {display: none !important;}
+    [aria-label*="community"] {display: none !important;}
+    [aria-label*="profile"] {display: none !important;}
+    [title*="community"] {display: none !important;}
+    [title*="profile"] {display: none !important;}
+    
+    /* محاولة شاملة لإخفاء عناصر التنقل السفلية */
+    nav:not(.st-emotion-cache-16txtl3) {display: none !important;}
+    [role="navigation"]:not(.st-emotion-cache-16txtl3) {display: none !important;}
+    
+    /* إخفاء عناصر Deploy و Community */
+    .st-emotion-cache-6qob1r {display: none !important;}
+    .st-emotion-cache-ue6h4q {display: none !important;}
+    .st-emotion-cache-1dp5vir {display: none !important;}
+    
+    /* إخفاء شريط التقدم الأحمر عند التحميل */
+    .stProgress {display: none !important;}
 </style>
 """
 st.markdown(hide_elements, unsafe_allow_html=True)
