@@ -14,11 +14,18 @@ st.set_page_config(
 
 # CSS مخصص لدعم اللغة العربية والتخطيط وتعديل الخط
 st.markdown("""
-<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700&display=swap" rel="stylesheet">
 <style>
+    /* تعريف الخط المخصص */
+    @font-face {
+        font-family: 'MjTunisia';
+        src: url('static/fonts/Mj_TunisiaLt.ttf') format('truetype');
+        font-weight: normal;
+        font-style: normal;
+    }
+    
     /* تطبيق الخط على جميع العناصر */
     * {
-        font-family: 'Tajawal', sans-serif !important;
+        font-family: 'MjTunisia', sans-serif !important;
     }
     
     /* تعديلات عامة لدعم RTL */
@@ -92,12 +99,12 @@ st.markdown("""
     
     /* تحسين البطاقات الإحصائية */
     .css-1l269bu {
-        font-family: 'Tajawal', sans-serif !important;
+        font-family: 'MjTunisia', sans-serif !important;
     }
     
     /* تعديل الشريط الجانبي */
     .css-1d391kg, .css-1inwz65 {
-        font-family: 'Tajawal', sans-serif !important;
+        font-family: 'MjTunisia', sans-serif !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -247,7 +254,7 @@ with tabs[0]:
             margin=dict(t=50, b=0, l=0, r=0),
             height=400,
             legend=dict(orientation="h", yanchor="bottom", y=-0.2),
-            font=dict(family="Tajawal")
+            font=dict(family="MjTunisia")
         )
         st.plotly_chart(fig_pie, use_container_width=True)
     
@@ -267,7 +274,7 @@ with tabs[0]:
             yaxis_title="البرنامج",
             yaxis={'categoryorder':'total ascending'},
             height=400,
-            font=dict(family="Tajawal")
+            font=dict(family="MjTunisia")
         )
         st.plotly_chart(fig_bar, use_container_width=True)
 
@@ -288,7 +295,7 @@ with tabs[1]:
         yaxis_title="النسبة المئوية",
         legend_title="المؤشر",
         height=500,
-        font=dict(family="Tajawal")
+        font=dict(family="MjTunisia")
     )
     st.plotly_chart(fig_indicators, use_container_width=True)
 
@@ -317,7 +324,7 @@ with tabs[2]:
         yaxis_title="القيمة",
         legend_title="المؤشر",
         height=500,
-        font=dict(family="Tajawal")
+        font=dict(family="MjTunisia")
     )
     st.plotly_chart(fig_trend, use_container_width=True)
 
@@ -380,7 +387,7 @@ fig_heatmap.update_layout(
     title="مقارنة المؤشرات الرئيسية عبر البرامج",
     margin=dict(t=50, b=0, l=0, r=0),
     height=400,
-    font=dict(family="Tajawal")
+    font=dict(family="MjTunisia")
 )
 
 st.plotly_chart(fig_heatmap, use_container_width=True)
