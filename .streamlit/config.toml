@@ -15,3 +15,11 @@ gatherUsageStats = false
 [ui]
 # هذا الإعداد سيجعل واجهة المستخدم من اليمين لليسار
 rtl = true
+
+# إعدادات لإخفاء عناصر واجهة المستخدم الافتراضية
+[client]
+toolbarMode = "minimal"
+showSidebarNavigation = true
+
+[global]
+showWarningOnDirectExecution = false
