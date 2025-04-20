@@ -1,100 +1,76 @@
+# -*- coding: utf-8 -*-
 import streamlit as st
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-from pages.utils.github_helpers import get_github_file_content
+# Assuming get_github_file_content exists in pages.utils.github_helpers
+# from pages.utils.github_helpers import get_github_file_content
 from datetime import datetime
+import hashlib # Added for dummy data generation
 
-# إعدادات الصفحة
+# --- إعدادات الصفحة ---
 st.set_page_config(
     page_title="الرئيسية",
     page_icon="🏠",
     layout="wide"
 )
 
-# إعداد CSS وإخفاء عناصر واجهة Streamlit الافتراضية
-hide_streamlit_elements = """
-<style>
-  /* 1. أخفِ شريط الـheader والـmenu الافتراضي */
-  [data-testid="stToolbar"] { visibility: hidden !important; }
-  #MainMenu               { visibility: hidden !important; }
-  header                  { visibility: hidden !important; }
-
-  /* 2. أخفِ الفوتر */
-  footer                  { visibility: hidden !important; }
-
-  /* 3. أخفِ أيقونة GitHub وبادج "Created by" */
-  [class^="viewerBadge_"], [id^="GithubIcon"] {
-    display: none !important;
-  }
-  [data-testid="stThumbnailsChipContainer"] {
-    display: none !important;
-  }
-
-  /* 4. أخفِ شريط التقدم */
-  .stProgress             { display: none !important; }
-
-  /* 5. استثناء للشريط الجانبي: أبقه مرئيًّا */
-  [data-testid="stSidebar"] {
-    display: block !important;
-  }
-
-  /* 6. أخفِ عناصر التنقل السفلية فقط (بدون تعميم nav) */
-  [data-testid="stBottomNavBar"],
-  [data-testid*="bottomNav"],
-  [aria-label*="community"],
-  [aria-label*="profile"],
-  [title*="community"],
-  [title*="profile"] {
-    display: none !important;
-  }
-
-  /* 7. إزالة روابط الترسّخ في العناوين */
-  h1 > div > a, h2 > div > a, h3 > div > a,
-  h4 > div > a, h5 > div > a, h6 > div > a {
-    display: none !important;
-  }
-</style>
-"""
-
-st.markdown(hide_streamlit_elements, unsafe_allow_html=True)
-
-# CSS مخصص لدعم اللغة العربية والتخطيط
-st.markdown("""
+# --- CSS لإخفاء عناصر Streamlit وإضافة قائمة البرجر ---
+custom_css = """
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700&display=swap" rel="stylesheet">
 <style>
-    /* تطبيق الخط على جميع العناصر */
+    /* 1. إخفاء عناصر Streamlit الافتراضية (بما في ذلك الشريط الجانبي) */
+    [data-testid="stToolbar"],
+    #MainMenu,
+    header,
+    footer,
+    [class^="viewerBadge_"],
+    [id^="GithubIcon"],
+    [data-testid="stThumbnailsChipContainer"],
+    .stProgress,
+    [data-testid="stBottomNavBar"],
+    [data-testid*="bottomNav"],
+    [aria-label*="community"],
+    [aria-label*="profile"],
+    [title*="community"],
+    [title*="profile"],
+    h1 > div > a, h2 > div > a, h3 > div > a,
+    h4 > div > a, h5 > div > a, h6 > div > a {
+        display: none !important;
+        visibility: hidden !important;
+    }
+
+    /* إخفاء الشريط الجانبي الافتراضي تمامًا */
+    [data-testid="stSidebar"] {
+        display: none !important;
+    }
+
+    /* 2. تطبيق الخط العربي وتنسيقات RTL */
     * {
         font-family: 'Tajawal', sans-serif !important;
     }
-    
-    /* تعديلات عامة لدعم RTL */
     .stApp {
         direction: rtl;
         text-align: right;
     }
-    
-    /* تنسيق العنوان الرئيسي */
+
+    /* 3. تنسيقات عامة للعناوين والبطاقات */
     h1 {
         color: #1e88e5;
         padding-bottom: 15px;
         border-bottom: 2px solid #1e88e5;
         margin-bottom: 30px;
         font-weight: 700;
-        font-size: calc(1.2rem + 1vw); /* حجم خط يتكيف مع عرض الشاشة */
+        font-size: calc(1.2rem + 1vw);
     }
-    
-    /* تنسيق العناوين الفرعية */
     h2, h3 {
         color: #1e88e5;
         margin-top: 30px;
         margin-bottom: 20px;
         font-weight: 600;
-        font-size: calc(1rem + 0.5vw); /* حجم خط يتكيف مع عرض الشاشة */
+        font-size: calc(1rem + 0.5vw);
     }
-    
-    /* تنسيق البطاقات */
-    .metric-card {
+    .metric-card { /* Kept for potential future use if metrics are styled this way */
         background-color: white;
         border-radius: 10px;
         padding: 15px;
@@ -102,9 +78,7 @@ st.markdown("""
         text-align: center;
         margin-bottom: 15px;
     }
-    
-    /* تنسيق الرسم البياني */
-    .chart-container {
+    .chart-container { /* Kept for potential future use */
         background-color: white;
         border-radius: 10px;
         padding: 10px;
@@ -113,8 +87,6 @@ st.markdown("""
         width: 100%;
         overflow: hidden;
     }
-    
-    /* تنسيق البطاقات للأعضاء المميزين */
     .faculty-card {
         background: linear-gradient(135deg, #f5f7fa 0%, #e3e6f0 100%);
         border-radius: 10px;
@@ -122,147 +94,182 @@ st.markdown("""
         margin-bottom: 10px;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
-    
-    /* تنسيق الإنجازات */
     .achievement-item {
         padding: 10px;
         border-right: 3px solid #1e88e5;
         margin-bottom: 10px;
         background-color: rgba(30, 136, 229, 0.05);
     }
-    
-    /* تحسين مظهر عناصر التحكم */
     .stSelectbox label, .stMultiselect label {
         font-weight: 500;
     }
-    
-    /* للهواتف المحمولة: نحتاج تبسيط العرض */
+
+    /* 4. تنسيقات قائمة البرجر */
+    .burger-trigger {
+        position: fixed;
+        top: 15px;
+        right: 20px; /* Changed from left for RTL */
+        z-index: 1001; /* Above overlay */
+        cursor: pointer;
+        background-color: #1e88e5;
+        color: white;
+        padding: 8px 12px;
+        border-radius: 5px;
+        font-size: 1.5rem;
+        line-height: 1;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        transition: background-color 0.3s ease;
+    }
+    .burger-trigger:hover {
+        background-color: #1565c0;
+    }
+
+    #burger-menu {
+        position: fixed;
+        top: 0;
+        right: 0; /* Start off-screen to the right for RTL */
+        width: 280px; /* Width of the menu */
+        height: 100%;
+        background-color: #f8f9fa;
+        box-shadow: -4px 0 15px rgba(0,0,0,0.2); /* Shadow on the left */
+        transform: translateX(100%); /* Hide off-screen right */
+        transition: transform 0.3s ease-in-out;
+        z-index: 1002; /* Above trigger and overlay */
+        padding-top: 60px; /* Space for close button or title */
+        padding-right: 20px;
+        padding-left: 20px;
+        overflow-y: auto; /* Allow scrolling if many links */
+    }
+
+    #burger-menu.show-menu {
+        transform: translateX(0); /* Slide in from the right */
+    }
+
+    #burger-menu h3 {
+        color: #333;
+        margin-top: 0;
+        margin-bottom: 25px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #ddd;
+        text-align: center; /* Center the title */
+    }
+
+    #burger-menu a {
+        display: block;
+        padding: 12px 15px;
+        color: #333;
+        text-decoration: none;
+        font-size: 1rem;
+        border-radius: 5px;
+        margin-bottom: 8px;
+        transition: background-color 0.2s ease, color 0.2s ease;
+    }
+
+    #burger-menu a:hover {
+        background-color: #e9ecef;
+        color: #1e88e5;
+    }
+    #burger-menu a.active-link { /* Style for the current page link */
+         background-color: #1e88e5;
+         color: white;
+         font-weight: 500;
+    }
+
+
+    #menu-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 1000; /* Below menu, above content */
+        display: none; /* Hidden by default */
+        opacity: 0;
+        transition: opacity 0.3s ease-in-out;
+    }
+
+    #menu-overlay.show-overlay {
+        display: block;
+        opacity: 1;
+    }
+
+    /* 5. زر العودة للأعلى (Kept as is) */
+     .back-to-top {
+        position: fixed;
+        bottom: 20px;
+        left: 20px; /* Changed from right for RTL */
+        width: 40px;
+        height: 40px;
+        background-color: #1e88e5;
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 998;
+        cursor: pointer;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        opacity: 0;
+        transition: opacity 0.3s, transform 0.3s;
+        transform: scale(0);
+    }
+    .back-to-top.visible {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    /* 6. تعديلات للهواتف المحمولة */
     @media only screen and (max-width: 768px) {
-        /* تعديل الشريط الجانبي على الشاشات الصغيرة */
-        section[data-testid="stSidebar"] {
-            width: 18rem !important;
-            min-width: 18rem !important;
-            max-width: 18rem !important;
-            position: fixed !important;
-            right: 0;
-            top: 0;
-            bottom: 0;
-            transform: translateX(100%);
-            transition: transform 300ms ease;
-            z-index: 1000;
-            box-shadow: -4px 0 15px rgba(0,0,0,0.2);
-        }
-        
-        section[data-testid="stSidebar"].show-sidebar {
-            transform: translateX(0) !important;
-        }
-        
-        /* تعديل حاوية المحتوى الرئيسي */
+        /* Adjust main container padding when menu might overlap */
         .main .block-container {
-            padding-right: 1rem !important;
+            padding-right: 1rem !important; /* Reduced padding */
             padding-left: 1rem !important;
         }
-        
-        /* إضافة زر للعودة للأعلى */
-        .back-to-top {
-            position: fixed;
-            bottom: 20px;
-            left: 20px;
-            width: 40px;
-            height: 40px;
-            background-color: #1e88e5;
-            color: white;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 998;
-            cursor: pointer;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
-        
-        .back-to-top.visible {
-            opacity: 1;
-        }
-        
-        /* تعديل حجم العناصر */
-        h1 {
-            font-size: 1.3rem;
-            margin-bottom: 15px;
-            padding-bottom: 10px;
-        }
-        
-        h2 {
-            font-size: 1.1rem;
-            margin-top: 15px;
-            margin-bottom: 10px;
-        }
-        
-        h3 {
-            font-size: 1rem;
-            margin-top: 12px;
-            margin-bottom: 8px;
-        }
+        h1 { font-size: 1.3rem; margin-bottom: 15px; padding-bottom: 10px; }
+        h2 { font-size: 1.1rem; margin-top: 15px; margin-bottom: 10px; }
+        h3 { font-size: 1rem; margin-top: 12px; margin-bottom: 8px; }
+        #burger-menu { width: 250px; } /* Slightly smaller menu on mobile */
+        .burger-trigger { top: 10px; right: 15px; padding: 6px 10px; font-size: 1.3rem;}
     }
-    
-    /* للأجهزة اللوحية مثل الآيباد */
+
+    /* 7. تعديلات للأجهزة اللوحية */
     @media only screen and (min-width: 769px) and (max-width: 1024px) {
-        h1 {
-            font-size: 1.7rem;
-        }
-        
-        h2, h3 {
-            font-size: 1.2rem;
-        }
-        
-        /* تعديل الشريط الجانبي للأجهزة اللوحية */
-        [data-testid="stSidebar"] {
-            width: 16rem !important;
-            min-width: 16rem !important;
-        }
+        h1 { font-size: 1.7rem; }
+        h2, h3 { font-size: 1.2rem; }
     }
+
 </style>
 
-<!-- إضافة طبقة لإظلام الخلفية عند فتح الشريط الجانبي -->
-<div id="sidebar-overlay" onclick="toggleSidebar()"></div>
+<div class="burger-trigger" onclick="toggleBurgerMenu()">☰</div>
+<div id="menu-overlay" onclick="toggleBurgerMenu()"></div>
+<div id="burger-menu">
+    <h3>القائمة</h3>
+    <a href="/" class="active-link">🏠 الرئيسية</a>
+    <a href="/هيئة_التدريس">👥 هيئة التدريس</a>
+    <a href="/التقييمات_والاستطلاعات">📊 التقييمات والاستطلاعات</a>
+    <a href="/لوحة_إنجاز_المهام">🎯 لوحة إنجاز المهام</a>
+    <a href="/صفحة_اخرى">📄 صفحة أخرى</a>
+    </div>
 
-<!-- إضافة زر جديد للشريط الجانبي على الأجهزة المحمولة -->
-<div class="sidebar-trigger" onclick="toggleSidebar()">
-    <span style="font-size: 1.2rem;">☰</span>
-</div>
-
-<!-- إضافة زر العودة للأعلى -->
 <div class="back-to-top" onclick="scrollToTop()">
     <span style="font-size: 1.2rem;">↑</span>
 </div>
 
 <script>
-    // وظيفة لفتح وإغلاق الشريط الجانبي
-    function toggleSidebar() {
-        const sidebar = document.querySelector('section[data-testid="stSidebar"]');
-        const overlay = document.getElementById('sidebar-overlay');
-        
-        if (sidebar.classList.contains('show-sidebar')) {
-            // إغلاق الشريط الجانبي
-            sidebar.classList.remove('show-sidebar');
-            overlay.style.display = 'none';
-        } else {
-            // فتح الشريط الجانبي
-            sidebar.classList.add('show-sidebar');
-            overlay.style.display = 'block';
-        }
+    // وظيفة لفتح وإغلاق قائمة البرجر
+    function toggleBurgerMenu() {
+        const menu = document.getElementById('burger-menu');
+        const overlay = document.getElementById('menu-overlay');
+        menu.classList.toggle('show-menu');
+        overlay.classList.toggle('show-overlay');
     }
-    
+
     // وظيفة للعودة للأعلى
     function scrollToTop() {
-        window.scrollTo({
-            top: 0,
-            behavior: 'smooth'
-        });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     }
-    
+
     // إظهار زر العودة للأعلى عند التمرير للأسفل
     window.addEventListener('scroll', function() {
         const backToTopButton = document.querySelector('.back-to-top');
@@ -272,63 +279,79 @@ st.markdown("""
             backToTopButton.classList.remove('visible');
         }
     });
-    
-    // انتظر تحميل الصفحة بالكامل ثم قم بتهيئة الشريط الجانبي
-    window.addEventListener('DOMContentLoaded', (event) => {
-        // تهيئة الشريط الجانبي للأجهزة المحمولة
-        const sidebar = document.querySelector('section[data-testid="stSidebar"]');
-        if (sidebar && window.innerWidth <= 768) {
-            // تعيين حدث النقر لإغلاق الشريط الجانبي عند النقر على أي رابط داخله
-            sidebar.querySelectorAll('a').forEach(link => {
-                link.addEventListener('click', function() {
-                    setTimeout(() => toggleSidebar(), 300);
-                });
-            });
-        }
-    });
-</script>
-""", unsafe_allow_html=True)
 
-# دالة مساعدة للتكيف مع الأجهزة المحمولة - نسخة محسنة
+    // إغلاق القائمة عند النقر على رابط داخلها (اختياري)
+    document.querySelectorAll('#burger-menu a').forEach(link => {
+        link.addEventListener('click', function() {
+            // أضف تأخيرًا بسيطًا للسماح برؤية التأثير قبل الإغلاق
+             setTimeout(() => {
+                 const menu = document.getElementById('burger-menu');
+                 const overlay = document.getElementById('menu-overlay');
+                 if (menu.classList.contains('show-menu')) {
+                    menu.classList.remove('show-menu');
+                    overlay.classList.remove('show-overlay');
+                 }
+             }, 150); // 150ms delay
+        });
+    });
+
+    // تحديد الرابط النشط بناءً على مسار الصفحة الحالية
+    // ملاحظة: هذا يعمل بشكل أفضل مع المسارات المطلقة أو إذا كان الخادم يعيد توجيه المسارات بشكل صحيح
+    // قد تحتاج إلى تعديل هذا الجزء بناءً على كيفية عمل Streamlit للروابط في بيئتك
+     document.addEventListener('DOMContentLoaded', () => {
+        const currentPath = window.location.pathname;
+        document.querySelectorAll('#burger-menu a').forEach(link => {
+            // إزالة الفئة النشطة من جميع الروابط أولاً
+            link.classList.remove('active-link');
+            // الحصول على مسار الرابط
+            const linkPath = link.getAttribute('href');
+            // التحقق مما إذا كان مسار الرابط يطابق المسار الحالي
+            // استخدام endsWith للتعامل مع "/" اللاحقة المحتملة
+            if (currentPath === linkPath || (currentPath.endsWith('/') && currentPath.slice(0,-1) === linkPath) || (linkPath.endsWith('/') && linkPath.slice(0,-1) === currentPath) ) {
+                 link.classList.add('active-link');
+            }
+            // حالة خاصة للصفحة الرئيسية "/"
+             if (currentPath === '/' && linkPath === '/') {
+                 link.classList.add('active-link');
+             }
+        });
+     });
+
+</script>
+"""
+
+st.markdown(custom_css, unsafe_allow_html=True)
+
+
+# --- دوال مساعدة ---
+
+# دالة مساعدة للتكيف مع الأجهزة المحمولة (لم تعد ضرورية للتحكم في الشريط الجانبي ولكن قد تكون مفيدة لأغراض أخرى)
+# يمكنك تبسيطها أو إزالتها إذا لم تكن تستخدمها في مكان آخر
 def is_mobile():
-    """تحقق مما إذا كان المستخدم يستخدم جهازًا محمولًا"""
+    """تحقق مما إذا كان المستخدم يستخدم جهازًا محمولًا (تقدير بسيط)"""
+    # هذا مجرد تقدير، الطريقة الأكثر دقة تتطلب JavaScript للحصول على عرض الشاشة
+    # لكن لأغراض التنسيق الأساسي، يمكن استخدام CSS media queries بشكل أساسي
+    # سنحتفظ بها هنا إذا كانت تستخدم في منطق آخر، ولكنها لم تعد تتحكم في القائمة
     if 'IS_MOBILE' not in st.session_state:
-        # تحديد القيمة الافتراضية بناءً على حجم النافذة المقدر
-        # يمكن تحسين هذا باستخدام معلمة URL أو وضع تبديل في واجهة المستخدم
-        st.session_state.IS_MOBILE = False
-        
-        # إضافة زر تبديل في الشريط الجانبي للاختبار (اختياري)
-        # st.sidebar.checkbox("عرض نسخة الجوال", key="mobile_view")
-    
-    # بدلاً من ذلك، يمكن أن تستخدم متغير session_state تم تعيينه من خلال صندوق الاختيار أعلاه
-    # return st.session_state.mobile_view
-    
-    # للعرض التوضيحي، نقوم بتقدير حجم الشاشة - في التطبيق الحقيقي
-    # قد ترغب في تنفيذ طريقة أكثر دقة
+        st.session_state.IS_MOBILE = False # القيمة الافتراضية
+    # يمكن ترك هذا للتحكم في عدد الأعمدة أو تنسيق المخططات كما كان من قبل
     return st.session_state.IS_MOBILE
 
-# دالة مساعدة لتحضير المخططات والرسوم البيانية متوافقة مع الشاشات المختلفة
+# دالة مساعدة لتحضير المخططات (Kept as is, useful for chart styling)
 def prepare_chart_layout(fig, title, is_mobile=False, chart_type="bar"):
     """تطبيق إعدادات موحدة على المخططات وجعلها متوافقة مع الشاشات المختلفة"""
-    
-    # إيقاف خاصية التكبير والحركة
-    fig.update_layout(
-        dragmode=False,
-    )
+    fig.update_layout(dragmode=False)
     fig.update_xaxes(fixedrange=True)
     fig.update_yaxes(fixedrange=True)
-    
-    # إعدادات مشتركة
+
     layout_settings = {
         "title": title,
         "font": {"family": "Tajawal"},
         "plot_bgcolor": "rgba(240, 240, 240, 0.8)",
         "paper_bgcolor": "white",
     }
-    
-    # إعدادات مخصصة حسب نوع الجهاز
+
     if is_mobile:
-        # إعدادات للشاشات الصغيرة
         mobile_settings = {
             "height": 300 if chart_type != "heatmap" else 350,
             "margin": {"t": 40, "b": 70, "l": 10, "r": 10, "pad": 0},
@@ -337,8 +360,6 @@ def prepare_chart_layout(fig, title, is_mobile=False, chart_type="bar"):
             "legend": {"orientation": "h", "yanchor": "bottom", "y": -0.3, "x": 0.5, "xanchor": "center", "font": {"size": 9}}
         }
         layout_settings.update(mobile_settings)
-        
-        # تكييف حسب نوع المخطط
         if chart_type == "bar":
             fig.update_traces(textfont_size=8)
             fig.update_xaxes(tickangle=45, tickfont={"size": 8})
@@ -346,86 +367,70 @@ def prepare_chart_layout(fig, title, is_mobile=False, chart_type="bar"):
             fig.update_traces(textfont_size=9, textposition="inside", textinfo="percent")
             layout_settings["showlegend"] = False
     else:
-        # إعدادات للشاشات المتوسطة والكبيرة
         desktop_settings = {
             "height": 450 if chart_type != "heatmap" else 400,
             "margin": {"t": 50, "b": 50, "l": 30, "r": 30, "pad": 4},
         }
         layout_settings.update(desktop_settings)
-    
-    # تطبيق الإعدادات
+
     fig.update_layout(**layout_settings)
-    
     return fig
 
-# ---- تحميل البيانات ----
+# --- دوال تحميل البيانات (Dummy implementations) ---
+# Placeholder for the actual function if it exists
+def get_github_file_content(path):
+     """Placeholder function to simulate fetching data."""
+     st.warning(f"Using dummy data for {path}. Implement `get_github_file_content`.")
+     # Return dummy data based on path
+     if "department_summary.csv" in path:
+         data = {
+             "البرنامج": [
+                 "بكالوريوس في القرآن وعلومه", "بكالوريوس القراءات",
+                 "ماجستير الدراسات القرآنية المعاصرة", "ماجستير القراءات",
+                 "دكتوراه علوم القرآن", "دكتوراه القراءات"
+             ],
+             "عدد الطلاب": [210, 180, 150, 200, 120, 140],
+             "أعضاء هيئة التدريس": [15, 12, 8, 10, 5, 6]
+         }
+         return pd.DataFrame(data)
+     # Add more dummy data structures if needed for other files
+     return pd.DataFrame() # Return empty DataFrame by default
+
 @st.cache_data(ttl=3600)
 def load_department_summary():
     try:
-        return get_github_file_content("data/department_summary.csv")
-    except:
-        # إنشاء بيانات تجريبية في حالة عدم وجود البيانات
+        # Replace with your actual data loading logic if needed
+        # return get_github_file_content("data/department_summary.csv")
+        # Using dummy data directly for demonstration
         data = {
             "البرنامج": [
-                "بكالوريوس في القرآن وعلومه",
-                "بكالوريوس القراءات",
-                "ماجستير الدراسات القرآنية المعاصرة",
-                "ماجستير القراءات",
-                "دكتوراه علوم القرآن",
-                "دكتوراه القراءات"
+                "بكالوريوس في القرآن وعلومه", "بكالوريوس القراءات",
+                "ماجستير الدراسات القرآنية المعاصرة", "ماجستير القراءات",
+                "دكتوراه علوم القرآن", "دكتوراه القراءات"
             ],
             "عدد الطلاب": [210, 180, 150, 200, 120, 140],
             "أعضاء هيئة التدريس": [15, 12, 8, 10, 5, 6]
         }
         return pd.DataFrame(data)
+    except Exception as e:
+        st.error(f"Error loading department summary: {e}")
+        return pd.DataFrame({ # Return empty structure on error
+             "البرنامج": [], "عدد الطلاب": [], "أعضاء هيئة التدريس": []
+        })
 
-# ... (الدوال الأخرى المتعلقة بتحميل البيانات)
 
-# ---- محتوى الصفحة ----
-# تحديد إذا كان المستخدم على جهاز محمول
-mobile_view = is_mobile()
-
-# ---- الترويسة ----
-if mobile_view:
-    # عرض مبسط للترويسة على الأجهزة المحمولة
-    st.title("🏠 الرئيسية")
-    st.markdown("### كلية القرآن الكريم والدراسات الإسلامية")
-    today = datetime.now().strftime("%Y/%m/%d")
-    st.markdown(f"<div>التاريخ: {today}</div>", unsafe_allow_html=True)
-else:
-    # عرض الترويسة في عمودين على الشاشات الكبيرة
-    col1, col2 = st.columns([3, 1])
-    with col1:
-        st.title("🏠 الرئيسية")
-        st.markdown("### كلية القرآن الكريم والدراسات الإسلامية")
-
-    with col2:
-        # عرض التاريخ الحالي
-        today = datetime.now().strftime("%Y/%m/%d")
-        st.markdown(f"<div style='text-align: left;'>التاريخ: {today}</div>", unsafe_allow_html=True)
-
-# رسالة ترحيبية في الشريط الجانبي
-st.sidebar.success("اختر برنامجًا من القائمة أعلاه لعرض تفاصيله.")
-
-# ---- باقي دوال تحميل البيانات ----
 @st.cache_data(ttl=3600)
 def load_yearly_data():
     """تحميل بيانات السنوات من 2020 إلى 2024 (للعرض التوضيحي)"""
     years = list(range(2020, 2025))
     data = []
     programs = [
-        "بكالوريوس في القرآن وعلومه",
-        "بكالوريوس القراءات",
-        "ماجستير الدراسات القرآنية المعاصرة",
-        "ماجستير القراءات",
-        "دكتوراه علوم القرآن",
-        "دكتوراه القراءات"
+        "بكالوريوس في القرآن وعلومه", "بكالوريوس القراءات",
+        "ماجستير الدراسات القرآنية المعاصرة", "ماجستير القراءات",
+        "دكتوراه علوم القرآن", "دكتوراه القراءات"
     ]
-    
     for year in years:
         for program in programs:
-            # هنا نضيف بيانات عشوائية في حالة عدم وجود بيانات حقيقية
-            import hashlib
             program_hash = int(hashlib.md5(program.encode()).hexdigest(), 16) % 100
             data.append({
                 "العام": year,
@@ -434,13 +439,11 @@ def load_yearly_data():
                 "نسبة النجاح": min(95, 70 + (year - 2020) * 2 + program_hash % 10),
                 "معدل الرضا": min(90, 75 + (year - 2020) * 1.5 + (program_hash // 2) % 10)
             })
-            
     return pd.DataFrame(data)
 
 @st.cache_data(ttl=3600)
 def load_faculty_achievements():
     """تحميل أحدث إنجازات أعضاء هيئة التدريس"""
-    # نموذج بسيط للإنجازات
     achievements = [
         {"العضو": "د. محمد أحمد", "الإنجاز": "نشر بحث في مجلة عالمية", "التاريخ": "2025-04-15", "النقاط": 50, "البرنامج": "بكالوريوس في القرآن وعلومه"},
         {"العضو": "د. عائشة سعد", "الإنجاز": "إطلاق مبادرة تعليمية", "التاريخ": "2025-04-10", "النقاط": 40, "البرنامج": "دكتوراه علوم القرآن"},
@@ -453,7 +456,6 @@ def load_faculty_achievements():
 @st.cache_data(ttl=3600)
 def load_top_faculty():
     """تحميل أفضل أعضاء هيئة التدريس"""
-    # نموذج بسيط لأفضل الأعضاء
     top_faculty = [
         {"الاسم": "د. عائشة سعد", "اللقب": "العضو القمة", "الشارة": "👑", "النقاط": 320, "البرنامج": "دكتوراه علوم القرآن"},
         {"الاسم": "د. محمد أحمد", "اللقب": "العضو المميز", "الشارة": "🌟", "النقاط": 280, "البرنامج": "بكالوريوس في القرآن وعلومه"},
@@ -461,391 +463,320 @@ def load_top_faculty():
     ]
     return pd.DataFrame(top_faculty)
 
-# ---- تهيئة البيانات ----
+# --- محتوى الصفحة ---
+mobile_view = is_mobile() # Check if mobile (can be used for layout adjustments)
+
+# ---- الترويسة ----
+# Simplified header, as date might be less critical without sidebar space
+st.title("🏠 الرئيسية")
+st.markdown("### كلية القرآن الكريم والدراسات الإسلامية")
+# Optional: Display date if needed
+# today = datetime.now().strftime("%Y/%m/%d")
+# st.markdown(f"<div style='text-align: left; font-size: 0.9em; color: grey;'>التاريخ: {today}</div>", unsafe_allow_html=True)
+
+
+# --- تهيئة البيانات ---
 try:
     dept_data = load_department_summary()
-    total_students = dept_data["عدد الطلاب"].sum()
-    total_faculty = dept_data["أعضاء هيئة التدريس"].sum()
+    # Ensure columns exist before summing
+    total_students = dept_data["عدد الطلاب"].sum() if "عدد الطلاب" in dept_data.columns else 0
+    total_faculty = dept_data["أعضاء هيئة التدريس"].sum() if "أعضاء هيئة التدريس" in dept_data.columns else 0
+
     yearly_data = load_yearly_data()
-    latest_year_data = yearly_data[yearly_data["العام"] == 2024]
+    # Ensure 'العام' column exists and has data for 2024
+    if "العام" in yearly_data.columns and 2024 in yearly_data["العام"].values:
+         latest_year_data = yearly_data[yearly_data["العام"] == 2024].copy() # Use .copy()
+    else:
+         st.warning("بيانات عام 2024 غير متوفرة في yearly_data. قد تكون الرسوم البيانية غير مكتملة.")
+         latest_year_data = pd.DataFrame() # Assign empty DataFrame
+
     faculty_achievements = load_faculty_achievements()
     top_faculty = load_top_faculty()
+
+    # Check if latest_year_data is empty before proceeding with charts that depend on it
+    if latest_year_data.empty and not dept_data.empty:
+        st.info("استخدام بيانات ملخص القسم للرسوم البيانية بسبب عدم توفر بيانات 2024.")
+        latest_year_data = dept_data # Fallback to dept_data if latest year is missing
+
 except Exception as e:
-    st.error(f"خطأ في تحميل البيانات: {e}")
-    st.warning("سيتم استخدام بيانات تجريبية لأغراض العرض.")
-    # إنشاء بيانات تجريبية في حالة الفشل
+    st.error(f"خطأ في تحميل أو تهيئة البيانات: {e}")
+    st.warning("سيتم استخدام بيانات تجريبية أو قيم افتراضية.")
+    # Fallback values
     total_students = 1000
     total_faculty = 50
+    # Create minimal dataframes to avoid errors later
+    dept_data = pd.DataFrame({"البرنامج": ["برنامج تجريبي"], "عدد الطلاب": [1000], "أعضاء هيئة التدريس": [50]})
+    latest_year_data = pd.DataFrame({
+        "العام": [2024], "البرنامج": ["برنامج تجريبي"], "عدد الطلاب": [1000],
+        "نسبة النجاح": [85], "معدل الرضا": [90]
+    })
+    yearly_data = latest_year_data.copy()
+    faculty_achievements = pd.DataFrame()
+    top_faculty = pd.DataFrame()
+
 
 # ---- بطاقات المقاييس الرئيسية ----
 st.subheader("المؤشرات الرئيسية")
+# Use columns for layout regardless of mobile view for simplicity now
+# Adjust number of columns based on available metrics
+cols = st.columns(4)
+with cols[0]:
+    st.metric("إجمالي الطلاب", f"{total_students:,}") # Removed delta for simplicity
+with cols[1]:
+    st.metric("أعضاء هيئة التدريس", f"{total_faculty:,}") # Removed delta
+# Add other metrics if available in data
+if not latest_year_data.empty and "نسبة النجاح" in latest_year_data.columns:
+     avg_success = latest_year_data["نسبة النجاح"].mean()
+     with cols[2]:
+         st.metric("متوسط النجاح", f"{avg_success:.0f}%")
+if not latest_year_data.empty and "معدل الرضا" in latest_year_data.columns:
+     avg_satisfaction = latest_year_data["معدل الرضا"].mean()
+     with cols[3]:
+         st.metric("متوسط الرضا", f"{avg_satisfaction:.0f}%")
 
-# تكييف عدد الأعمدة بناءً على حجم الشاشة
-if mobile_view:
-    # عرض المؤشرات في عمودين للشاشات الصغيرة
-    col1, col2 = st.columns(2)
-    with col1:
-        st.metric("إجمالي الطلاب", f"{total_students:,}", "+5%")
-        st.metric("معدل النجاح", "87%", "+3%")
-    with col2:
-        st.metric("أعضاء هيئة التدريس", f"{total_faculty:,}", "+2")
-        st.metric("متوسط الرضا", "92%", "+4%")
-else:
-    # عرض المؤشرات في أربعة أعمدة للشاشات الكبيرة
-    c1, c2, c3, c4 = st.columns(4)
-    with c1:
-        st.metric("إجمالي عدد الطلاب", f"{total_students:,}", "+5% منذ العام الماضي")
-    with c2:
-        st.metric("إجمالي أعضاء هيئة التدريس", f"{total_faculty:,}", "+2 عضو جديد")
-    with c3:
-        st.metric("معدل النجاح الإجمالي", "87%", "+3% منذ العام الماضي")
-    with c4:
-        st.metric("متوسط رضا الطلاب", "92%", "+4% منذ العام الماضي")
 
 # ---- الرسومات البيانية ----
-st.subheader("تحليل البرامج الأكاديمية")
+# Check if data is available before creating charts
+if not latest_year_data.empty and "البرنامج" in latest_year_data.columns and "عدد الطلاب" in latest_year_data.columns:
+    st.subheader("تحليل البرامج الأكاديمية")
 
-# تبويبات للتبديل بين التحليلات المختلفة - تبسيط على الأجهزة المحمولة
-if mobile_view:
-    tab_labels = ["توزيع", "مقارنة", "تطور"]
-else:
-    tab_labels = ["توزيع الطلاب", "مقارنة المؤشرات", "التطور السنوي"]
-
-tabs = st.tabs(tab_labels)
-
-# تبويب 1: توزيع الطلاب
-with tabs[0]:
-    if mobile_view:
-        # عرض المخططات في عمود واحد للشاشات الصغيرة
-        # اختصار أسماء البرامج
-        mapping = {
-            "بكالوريوس في القرآن وعلومه": "بكالوريوس القرآن",
-            "بكالوريوس القراءات": "بكالوريوس القراءات",
-            "ماجستير الدراسات القرآنية المعاصرة": "ماجستير الدراسات",
-            "ماجستير القراءات": "ماجستير القراءات",
-            "دكتوراه علوم القرآن": "دكتوراه القرآن",
-            "دكتوراه القراءات": "دكتوراه القراءات"
-        }
-        
-        # نسخة من البيانات مع أسماء مختصرة للشاشات الصغيرة
-        mobile_data = latest_year_data.copy()
-        mobile_data["البرنامج"] = mobile_data["البرنامج"].map(mapping)
-        
-        # مخطط دائري لتوزيع الطلاب
-        fig_pie = px.pie(
-            mobile_data, 
-            values="عدد الطلاب", 
-            names="البرنامج",
-            title="توزيع الطلاب بين البرامج",
-            color_discrete_sequence=px.colors.qualitative.Bold
-        )
-        
-        # تطبيق إعدادات المخطط المتجاوبة
-        fig_pie = prepare_chart_layout(fig_pie, "توزيع الطلاب بين البرامج", is_mobile=True, chart_type="pie")
-        st.plotly_chart(fig_pie, use_container_width=True, config={"displayModeBar": False})
-        
-        # مخطط شريطي للطلاب حسب البرنامج
-        fig_bar = px.bar(
-            mobile_data, 
-            y="البرنامج", 
-            x="عدد الطلاب",
-            title="عدد الطلاب في كل برنامج",
-            color="عدد الطلاب",
-            orientation='h',
-            color_continuous_scale="Viridis"
-        )
-        
-        # تطبيق إعدادات المخطط المتجاوبة
-        fig_bar = prepare_chart_layout(fig_bar, "عدد الطلاب في كل برنامج", is_mobile=True, chart_type="bar")
-        st.plotly_chart(fig_bar, use_container_width=True, config={"displayModeBar": False})
-        
+    # Mapping for shorter program names (useful for mobile and desktop)
+    program_mapping = {
+        "بكالوريوس في القرآن وعلومه": "ب. قرآن",
+        "بكالوريوس القراءات": "ب. قراءات",
+        "ماجستير الدراسات القرآنية المعاصرة": "م. دراسات",
+        "ماجستير القراءات": "م. قراءات",
+        "دكتوراه علوم القرآن": "د. قرآن",
+        "دكتوراه القراءات": "د. قراءات"
+    }
+    # Apply mapping safely
+    display_data = latest_year_data.copy()
+    if "البرنامج" in display_data.columns:
+         display_data["البرنامج_المختصر"] = display_data["البرنامج"].map(program_mapping).fillna(display_data["البرنامج"])
     else:
-        # عرض المخططات في عمودين للشاشات الكبيرة
-        col1, col2 = st.columns([1, 1])
-        
+         display_data["البرنامج_المختصر"] = display_data["البرنامج"] # Fallback if column missing
+
+    # تبويبات للتبديل بين التحليلات
+    tab_labels = ["توزيع الطلاب", "مقارنة المؤشرات", "التطور السنوي"]
+    tabs = st.tabs(tab_labels)
+
+    # تبويب 1: توزيع الطلاب
+    with tabs[0]:
+        col1, col2 = st.columns([1, 1]) # Use columns for better layout
         with col1:
-            # مخطط دائري لتوزيع الطلاب
             fig_pie = px.pie(
-                latest_year_data, 
-                values="عدد الطلاب", 
-                names="البرنامج",
-                title="توزيع الطلاب بين البرامج",
-                color_discrete_sequence=px.colors.qualitative.Bold
+                display_data,
+                values="عدد الطلاب",
+                names="البرنامج_المختصر", # Use short names
+                title="توزيع الطلاب",
+                color_discrete_sequence=px.colors.qualitative.Pastel
             )
-            
-            # تطبيق إعدادات المخطط المتجاوبة
-            fig_pie = prepare_chart_layout(fig_pie, "توزيع الطلاب بين البرامج", is_mobile=False, chart_type="pie")
+            fig_pie = prepare_chart_layout(fig_pie, "توزيع الطلاب", is_mobile=mobile_view, chart_type="pie")
             st.plotly_chart(fig_pie, use_container_width=True, config={"displayModeBar": False})
-        
+
         with col2:
-            # مخطط شريطي للطلاب حسب البرنامج
             fig_bar = px.bar(
-                latest_year_data, 
-                y="البرنامج", 
+                display_data.sort_values("عدد الطلاب", ascending=True), # Sort for better visualization
+                y="البرنامج_المختصر", # Use short names
                 x="عدد الطلاب",
-                title="عدد الطلاب في كل برنامج",
+                title="عدد الطلاب لكل برنامج",
                 color="عدد الطلاب",
                 orientation='h',
-                color_continuous_scale="Viridis"
+                color_continuous_scale="Blues" # Changed color scale
             )
-            
-            # تطبيق إعدادات المخطط المتجاوبة
-            fig_bar = prepare_chart_layout(fig_bar, "عدد الطلاب في كل برنامج", is_mobile=False, chart_type="bar")
+            fig_bar = prepare_chart_layout(fig_bar, "عدد الطلاب لكل برنامج", is_mobile=mobile_view, chart_type="bar")
             st.plotly_chart(fig_bar, use_container_width=True, config={"displayModeBar": False})
 
-# تبويب 2: مقارنة المؤشرات
-with tabs[1]:
-    # للأجهزة المحمولة، نستخدم أسماء مختصرة
-    if mobile_view:
-        mobile_data = latest_year_data.copy()
-        mobile_data["البرنامج"] = mobile_data["البرنامج"].map({
-            "بكالوريوس في القرآن وعلومه": "بكالوريوس القرآن",
-            "بكالوريوس القراءات": "بكالوريوس القراءات",
-            "ماجستير الدراسات القرآنية المعاصرة": "ماجستير الدراسات",
-            "ماجستير القراءات": "ماجستير القراءات",
-            "دكتوراه علوم القرآن": "دكتوراه القرآن",
-            "دكتوراه القراءات": "دكتوراه القراءات"
-        })
-        
-        # مخطط بياني مقارن للمؤشرات بين البرامج
-        fig_indicators = px.bar(
-            mobile_data,
-            x="البرنامج",
-            y=["نسبة النجاح", "معدل الرضا"],
-            barmode="group",
-            title="مقارنة المؤشرات",
-            labels={"value": "النسبة المئوية", "variable": "المؤشر"},
-            color_discrete_sequence=["#1e88e5", "#27AE60"]
-        )
-        
-        # تطبيق إعدادات المخطط المتجاوبة
-        fig_indicators = prepare_chart_layout(fig_indicators, "مقارنة المؤشرات", is_mobile=True, chart_type="bar")
-        st.plotly_chart(fig_indicators, use_container_width=True, config={"displayModeBar": False})
-    else:
-        # مخطط بياني مقارن للمؤشرات بين البرامج للشاشات الكبيرة
-        fig_indicators = px.bar(
-            latest_year_data,
-            x="البرنامج",
-            y=["نسبة النجاح", "معدل الرضا"],
-            barmode="group",
-            title="مقارنة المؤشرات بين البرامج",
-            labels={"value": "النسبة المئوية", "variable": "المؤشر"},
-            color_discrete_sequence=["#1e88e5", "#27AE60"]
-        )
-        
-        # تطبيق إعدادات المخطط المتجاوبة
-        fig_indicators = prepare_chart_layout(fig_indicators, "مقارنة المؤشرات بين البرامج", is_mobile=False, chart_type="bar")
-        st.plotly_chart(fig_indicators, use_container_width=True, config={"displayModeBar": False})
+    # تبويب 2: مقارنة المؤشرات
+    with tabs[1]:
+         # Check if indicator columns exist
+         indicators_to_plot = []
+         if "نسبة النجاح" in display_data.columns:
+             indicators_to_plot.append("نسبة النجاح")
+         if "معدل الرضا" in display_data.columns:
+             indicators_to_plot.append("معدل الرضا")
 
-# تبويب 3: التطور السنوي
-with tabs[2]:
-    # اختيار البرنامج
-    # تحديد قائمة الخيارات حسب حجم الشاشة
-    if mobile_view:
-        program_options = {
-            "بكالوريوس في القرآن وعلومه": "بكالوريوس القرآن",
-            "بكالوريوس القراءات": "بكالوريوس القراءات",
-            "ماجستير الدراسات القرآنية المعاصرة": "ماجستير الدراسات",
-            "ماجستير القراءات": "ماجستير القراءات",
-            "دكتوراه علوم القرآن": "دكتوراه القرآن",
-            "دكتوراه القراءات": "دكتوراه القراءات"
-        }
-        display_options = list(program_options.values())
-        options = list(program_options.keys())
-        # القيمة الافتراضية للاختيار
-        default_idx = 0 if "selected_program_idx" not in st.session_state else st.session_state.selected_program_idx
-        selected_display = st.selectbox(
-            "اختر البرنامج:",
-            options=display_options,
-            index=default_idx
-        )
-        # تحويل الاسم المختصر إلى الاسم الكامل
-        reverse_mapping = {v: k for k, v in program_options.items()}
-        selected_program = reverse_mapping[selected_display]
-        # حفظ الاختيار
-        st.session_state.selected_program_idx = display_options.index(selected_display)
-    else:
-        selected_program = st.selectbox(
-            "اختر البرنامج لعرض تطوره السنوي:",
-            options=yearly_data["البرنامج"].unique()
-        )
-    
-    # تصفية البيانات حسب البرنامج المختار
-    program_data = yearly_data[yearly_data["البرنامج"] == selected_program]
-    
-    # مخطط خطي للتطور السنوي
-    fig_trend = px.line(
-        program_data,
-        x="العام",
-        y=["عدد الطلاب", "نسبة النجاح", "معدل الرضا"],
-        title=f"تطور مؤشرات البرنامج (2020-2024)" if mobile_view else f"تطور مؤشرات برنامج {selected_program} (2020-2024)",
-        labels={"value": "القيمة", "variable": "المؤشر"},
-        markers=True
-    )
-    
-    # تطبيق إعدادات المخطط المتجاوبة
-    fig_trend = prepare_chart_layout(fig_trend, 
-                                     f"تطور المؤشرات" if mobile_view else f"تطور مؤشرات البرنامج", 
-                                     is_mobile=mobile_view, 
-                                     chart_type="line")
-    
-    # تعديلات إضافية خاصة بالمخطط الخطي
-    if mobile_view:
-        # تعديل علامات المحور س لتقليل التداخل
-        fig_trend.update_xaxes(
-            dtick=2,  # إظهار سنة واحدة من كل سنتين
-            tickangle=0
-        )
-    
-    st.plotly_chart(fig_trend, use_container_width=True, config={"displayModeBar": False})
+         if indicators_to_plot:
+             fig_indicators = px.bar(
+                 display_data,
+                 x="البرنامج_المختصر", # Use short names
+                 y=indicators_to_plot,
+                 barmode="group",
+                 title="مقارنة المؤشرات",
+                 labels={"value": "النسبة المئوية", "variable": "المؤشر", "البرنامج_المختصر": "البرنامج"},
+                 color_discrete_sequence=["#1e88e5", "#27AE60"] # Blue and Green
+             )
+             fig_indicators = prepare_chart_layout(fig_indicators, "مقارنة المؤشرات", is_mobile=mobile_view, chart_type="bar")
+             st.plotly_chart(fig_indicators, use_container_width=True, config={"displayModeBar": False})
+         else:
+             st.info("لا توجد بيانات مؤشرات (نسبة النجاح/معدل الرضا) لعرض المقارنة.")
 
-# ---- أعضاء هيئة التدريس المميزين وأحدث الإنجازات ----
+
+    # تبويب 3: التطور السنوي
+    with tabs[2]:
+        if not yearly_data.empty and "البرنامج" in yearly_data.columns:
+            # Use short names for selection as well
+            unique_programs_full = yearly_data["البرنامج"].unique()
+            program_options_display = {program_mapping.get(p, p): p for p in unique_programs_full}
+
+            selected_display_program = st.selectbox(
+                "اختر البرنامج لعرض تطوره:",
+                options=list(program_options_display.keys())
+            )
+            selected_program_full = program_options_display[selected_display_program]
+
+            program_data = yearly_data[yearly_data["البرنامج"] == selected_program_full].copy()
+
+            # Check which columns are available for plotting
+            trend_indicators = []
+            if "عدد الطلاب" in program_data.columns:
+                 trend_indicators.append("عدد الطلاب")
+            if "نسبة النجاح" in program_data.columns:
+                 trend_indicators.append("نسبة النجاح")
+            if "معدل الرضا" in program_data.columns:
+                 trend_indicators.append("معدل الرضا")
+
+            if trend_indicators and "العام" in program_data.columns:
+                 fig_trend = px.line(
+                     program_data,
+                     x="العام",
+                     y=trend_indicators,
+                     title=f"تطور مؤشرات: {selected_display_program}",
+                     labels={"value": "القيمة", "variable": "المؤشر", "العام": "السنة"},
+                     markers=True
+                 )
+                 fig_trend = prepare_chart_layout(fig_trend, f"تطور: {selected_display_program}", is_mobile=mobile_view, chart_type="line")
+                 if mobile_view:
+                     fig_trend.update_xaxes(dtick=1 if len(program_data['العام'].unique()) <= 5 else 2, tickangle=0) # Adjust dtick based on years
+
+                 st.plotly_chart(fig_trend, use_container_width=True, config={"displayModeBar": False})
+            else:
+                 st.info(f"لا توجد بيانات كافية لعرض التطور السنوي لبرنامج {selected_display_program}.")
+        else:
+            st.info("لا توجد بيانات سنوية لعرض التطور.")
+
+else:
+    st.info("لا توجد بيانات كافية لعرض الرسوم البيانية للبرامج.")
+
+
+# ---- أعضاء هيئة التدريس والإنجازات ----
 st.subheader("أعضاء هيئة التدريس والإنجازات")
 
-# تكييف التخطيط حسب حجم الشاشة
-if mobile_view:
-    # عرض في عمود واحد للأجهزة المحمولة
-    # أعضاء هيئة التدريس المميزين - اقتصر على أهم عضوين
-    st.markdown("### 🏆 أعضاء هيئة التدريس المميزين")
-    
-    for i, (_, member) in enumerate(top_faculty.iterrows()):
-        if i >= 2:  # عرض أول عضوين فقط على الشاشات الصغيرة
-            break
-        with st.container():
-            st.markdown(f"""
-            <div class='faculty-card'>
-                <h3 style="font-size: 1.1rem; margin-bottom: 5px;">{member['الشارة']} {member['الاسم']}</h3>
-                <p style="font-size: 0.9rem; margin: 2px 0;"><strong>اللقب:</strong> {member['اللقب']}</p>
-                <p style="font-size: 0.9rem; margin: 2px 0;"><strong>النقاط:</strong> {member['النقاط']}</p>
-            </div>
-            """, unsafe_allow_html=True)
-    
-    st.markdown("[عرض جميع أعضاء هيئة التدريس](http://localhost:8501/هيئة_التدريس)")
-    
-    # أحدث الإنجازات - اقتصر على أهم 2 إنجازات
-    st.markdown("### 🌟 أحدث الإنجازات")
-    
-    for i, (_, achievement) in enumerate(faculty_achievements.iterrows()):
-        if i >= 2:  # عرض أول إنجازين فقط على الشاشات الصغيرة
-            break
-            
-        date_obj = datetime.strptime(achievement['التاريخ'], "%Y-%m-%d")
-        formatted_date = date_obj.strftime("%d/%m/%Y")
-        
-        st.markdown(f"""
-        <div class='achievement-item'>
-            <p style="font-size: 0.9rem; margin: 2px 0;"><strong>{achievement['العضو']}</strong></p>
-            <p style="font-size: 0.9rem; margin: 2px 0;">{achievement['الإنجاز']}</p>
-            <p style="font-size: 0.8rem; margin: 2px 0;"><small>{formatted_date} | {achievement['النقاط']} نقطة</small></p>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    # تحديث رابط صفحة لوحة إنجاز المهام
-    st.markdown("[عرض لوحة إنجاز المهام الكاملة](http://localhost:8501/لوحة_إنجاز_المهام)")
-else:
-    # عرض في عمودين للشاشات الكبيرة
-    col1, col2 = st.columns([1, 1])
+# Check if data is available
+if not top_faculty.empty or not faculty_achievements.empty:
+    col1, col2 = st.columns([1, 1]) # Use two columns layout
 
     # أعضاء هيئة التدريس المميزين
     with col1:
-        st.markdown("### 🏆 أعضاء هيئة التدريس المميزين")
-        
-        for _, member in top_faculty.iterrows():
-            with st.container():
-                st.markdown(f"""
-                <div class='faculty-card'>
-                    <h3>{member['الشارة']} {member['الاسم']}</h3>
-                    <p><strong>اللقب:</strong> {member['اللقب']}</p>
-                    <p><strong>البرنامج:</strong> {member['البرنامج']}</p>
-                    <p><strong>النقاط:</strong> {member['النقاط']}</p>
-                </div>
-                """, unsafe_allow_html=True)
-        
-        st.markdown("[عرض جميع أعضاء هيئة التدريس](http://localhost:8501/هيئة_التدريس)")
+        st.markdown("#### 🏆 المميزون") # Use H4 for smaller heading
+        if not top_faculty.empty:
+            # Display top 3 or all if less than 3
+            num_to_display = min(len(top_faculty), 3)
+            for _, member in top_faculty.head(num_to_display).iterrows():
+                 # Check for missing keys gracefully
+                 name = member.get('الاسم', 'غير متوفر')
+                 badge = member.get('الشارة', '')
+                 title = member.get('اللقب', '')
+                 points = member.get('النقاط', '')
+                 st.markdown(f"""
+                 <div class='faculty-card'>
+                     <h5 style="margin-bottom: 5px;">{badge} {name}</h5>
+                     <p style="font-size: 0.9em; margin: 2px 0;">{title} ({points} نقطة)</p>
+                 </div>
+                 """, unsafe_allow_html=True)
+            # Link to the full page (update href as needed)
+            st.markdown("<a href='/هيئة_التدريس' target='_self' style='font-size: 0.9em;'>عرض الكل...</a>", unsafe_allow_html=True)
+        else:
+            st.info("لا توجد بيانات لأعضاء هيئة التدريس المميزين.")
 
     # أحدث الإنجازات
     with col2:
-        st.markdown("### 🌟 أحدث الإنجازات")
-        
-        for _, achievement in faculty_achievements.iterrows():
-            date_obj = datetime.strptime(achievement['التاريخ'], "%Y-%m-%d")
-            formatted_date = date_obj.strftime("%d/%m/%Y")
-            
-            st.markdown(f"""
-            <div class='achievement-item'>
-                <p><strong>{achievement['العضو']}</strong> ({achievement['البرنامج']})</p>
-                <p>{achievement['الإنجاز']}</p>
-                <p><small>التاريخ: {formatted_date} | النقاط: {achievement['النقاط']}</small></p>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        # تحديث رابط صفحة لوحة إنجاز المهام
-        st.markdown("[عرض لوحة إنجاز المهام الكاملة](http://localhost:8501/لوحة_إنجاز_المهام)")
+        st.markdown("#### 🌟 أحدث الإنجازات") # Use H4
+        if not faculty_achievements.empty:
+            # Display top 3 or all if less than 3
+            num_to_display = min(len(faculty_achievements), 3)
+            # Ensure 'التاريخ' column exists and sort
+            if 'التاريخ' in faculty_achievements.columns:
+                 faculty_achievements['التاريخ'] = pd.to_datetime(faculty_achievements['التاريخ'], errors='coerce')
+                 achievements_to_display = faculty_achievements.sort_values('التاريخ', ascending=False).head(num_to_display)
+            else:
+                 achievements_to_display = faculty_achievements.head(num_to_display) # Display top N if no date
+
+            for _, achievement in achievements_to_display.iterrows():
+                 member_name = achievement.get('العضو', 'غير معروف')
+                 desc = achievement.get('الإنجاز', 'لا يوجد وصف')
+                 date_str = achievement.get('التاريخ', None)
+                 formatted_date = date_str.strftime("%Y/%m/%d") if pd.notna(date_str) else ""
+
+                 st.markdown(f"""
+                 <div class='achievement-item'>
+                     <p style="font-size: 0.95em; margin-bottom: 3px;"><strong>{member_name}</strong></p>
+                     <p style="font-size: 0.9em; margin-bottom: 3px;">{desc}</p>
+                     {f'<p style="font-size: 0.8em; color: grey; margin-bottom: 0;">{formatted_date}</p>' if formatted_date else ''}
+                 </div>
+                 """, unsafe_allow_html=True)
+             # Link to the full page (update href as needed)
+            st.markdown("<a href='/لوحة_إنجاز_المهام' target='_self' style='font-size: 0.9em;'>عرض الكل...</a>", unsafe_allow_html=True)
+        else:
+            st.info("لا توجد بيانات لأحدث الإنجازات.")
+else:
+    st.info("لا تتوفر بيانات أعضاء هيئة التدريس أو الإنجازات حاليًا.")
+
 
 # ---- مخطط حراري للمؤشرات الرئيسية ----
-st.subheader("مؤشرات البرامج الرئيسية")
+# Check if data and required columns are available
+if not latest_year_data.empty and "البرنامج_المختصر" in display_data.columns and indicators_to_plot:
+    st.subheader("نظرة عامة على المؤشرات")
+    try:
+        # Prepare data for heatmap (only numeric indicators)
+        heatmap_plot_data = display_data[["البرنامج_المختصر"] + indicators_to_plot].set_index("البرنامج_المختصر")
 
-# تحضير بيانات المخطط الحراري حسب حجم الشاشة
-if mobile_view:
-    # استخدام أسماء مختصرة للبرامج
-    heatmap_data = latest_year_data.copy()
-    heatmap_data["البرنامج"] = heatmap_data["البرنامج"].map({
-        "بكالوريوس في القرآن وعلومه": "بكالوريوس القرآن",
-        "بكالوريوس القراءات": "بكالوريوس القراءات",
-        "ماجستير الدراسات القرآنية المعاصرة": "ماجستير الدراسات",
-        "ماجستير القراءات": "ماجستير القراءات",
-        "دكتوراه علوم القرآن": "دكتوراه القرآن",
-        "دكتوراه القراءات": "دكتوراه القراءات"
-    })
-    
-    # وضع المخطط الحراري باستخدام Plotly مع تكييفه للشاشات الصغيرة
-    fig_heatmap = go.Figure(data=go.Heatmap(
-        z=heatmap_data[["نسبة النجاح", "معدل الرضا"]].values,
-        x=["نسبة النجاح", "معدل الرضا"],
-        y=heatmap_data["البرنامج"],
-        colorscale="Viridis",
-        text=heatmap_data[["نسبة النجاح", "معدل الرضا"]].values,
-        texttemplate="%{text}%",
-        textfont={"size": 9},
-    ))
-else:
-    # وضع المخطط الحراري للشاشات الكبيرة
-    fig_heatmap = go.Figure(data=go.Heatmap(
-        z=latest_year_data[["نسبة النجاح", "معدل الرضا"]].values,
-        x=["نسبة النجاح", "معدل الرضا"],
-        y=latest_year_data["البرنامج"],
-        colorscale="Viridis",
-        text=latest_year_data[["نسبة النجاح", "معدل الرضا"]].values,
-        texttemplate="%{text}%",
-        textfont={"size": 12},
-    ))
+        fig_heatmap = go.Figure(data=go.Heatmap(
+            z=heatmap_plot_data.values,
+            x=heatmap_plot_data.columns,
+            y=heatmap_plot_data.index,
+            colorscale="Blues", # Using Blues scale
+            text=heatmap_plot_data.values,
+            texttemplate="%{text:.0f}", # Format text as integer
+            textfont={"size": 10 if mobile_view else 12},
+            hoverongaps = False
+        ))
 
-# تطبيق إعدادات المخطط المتجاوبة
-fig_heatmap = prepare_chart_layout(
-    fig_heatmap, 
-    "مقارنة المؤشرات الرئيسية" if mobile_view else "مقارنة المؤشرات الرئيسية عبر البرامج", 
-    is_mobile=mobile_view, 
-    chart_type="heatmap"
-)
+        fig_heatmap = prepare_chart_layout(
+            fig_heatmap,
+            "مقارنة المؤشرات الرئيسية",
+            is_mobile=mobile_view,
+            chart_type="heatmap"
+        )
+        # Adjust heatmap specific layout
+        fig_heatmap.update_layout(
+             xaxis_title="المؤشر",
+             yaxis_title="البرنامج",
+             yaxis=dict(tickfont=dict(size=9 if mobile_view else 10)), # Adjust y-axis font size
+             margin=dict(l=100) # Add left margin for program names
+        )
 
-# تعديلات إضافية للمخطط الحراري
-if mobile_view:
-    # زيادة الهامش السفلي للشاشات الصغيرة
-    fig_heatmap.update_layout(margin=dict(b=30))
+        st.plotly_chart(fig_heatmap, use_container_width=True, config={"displayModeBar": False})
 
-# عرض المخطط الحراري مع إيقاف شريط التكبير
-st.plotly_chart(fig_heatmap, use_container_width=True, config={"displayModeBar": False})
+    except Exception as heatmap_error:
+        st.warning(f"لم يتمكن من إنشاء المخطط الحراري: {heatmap_error}")
+
+elif not latest_year_data.empty:
+     st.info("لا تتوفر بيانات مؤشرات كافية (نسبة النجاح/معدل الرضا) لإنشاء المخطط الحراري.")
+# No message if latest_year_data itself was empty, covered by earlier checks
+
 
 # ---- نصائح للمستخدم ----
-# استخدام expander للنصائح لتوفير المساحة على الشاشات الصغيرة
-with st.expander("📋 نصائح للاستخدام", expanded=not mobile_view):
+# Use expander for tips, keep it collapsed by default
+with st.expander("💡 نصائح للاستخدام", expanded=False):
     st.markdown("""
-    - انقر على اسم أي برنامج في القائمة الجانبية لاستعراض تفاصيله
-    - استخدم صفحة "هيئة التدريس" لعرض معلومات الأعضاء
-    - قم بزيارة "التقييمات والاستطلاعات" للاطلاع على نتائج التقييمات
-    - استخدم "لوحة إنجاز المهام" لتسجيل وعرض إنجازات أعضاء هيئة التدريس
+    - انقر على أيقونة ☰ في الأعلى لفتح القائمة والتنقل بين الصفحات.
+    - استخدم الروابط في القائمة لاستعراض تفاصيل البرامج، هيئة التدريس، أو الإنجازات.
+    - الرسوم البيانية تفاعلية، مرر الفأرة فوقها لرؤية التفاصيل.
+    - انقر على زر السهم ↑ في الأسفل للعودة إلى أعلى الصفحة بسرعة.
     """)
 
-# إضافة تنبيه بتجاوب الموقع
-if mobile_view:
-    st.info("👋 تم تحسين العرض للأجهزة المحمولة. مرر الشاشة للمزيد من المحتوى!")
+# Optional: Add a small footer if desired (outside the hidden footer)
+# st.markdown("---")
+# st.markdown("<div style='text-align: center; font-size: 0.8em; color: grey;'>© 2025 كلية القرآن الكريم والدراسات الإسلامية</div>", unsafe_allow_html=True)
+
